@@ -26,6 +26,7 @@ import adminRouter from './routes/admin';
 import { startReminderJob } from './jobs/reminder.job';
 import { startFxJob } from './jobs/fx.job';
 import { startWalletJob } from './jobs/wallet.job';
+import { startAutopayJob } from './jobs/autopay.job';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -97,6 +98,7 @@ if (!isTest) {
   startReminderJob();
   startFxJob();
   startWalletJob();
+  startAutopayJob();
   app.listen(PORT, () => {
     console.log(`Subvoy backend running on port ${PORT}`);
   });

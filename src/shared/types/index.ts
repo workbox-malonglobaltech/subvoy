@@ -112,6 +112,10 @@ export interface Subscription {
   logoUrl: string | null;
   notes: string | null;
   isActive: boolean;
+  /** When true, the autopay job charges this subscription from the wallet on its billing date */
+  autopay: boolean;
+  /** Skip auto-charge if the amount exceeds this cap (whole currency units); null = no cap */
+  autopayMaxAmount: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,6 +129,8 @@ export interface CreateSubscriptionInput {
   category?: string;
   logoUrl?: string;
   notes?: string;
+  autopay?: boolean;
+  autopayMaxAmount?: number | null;
 }
 
 export interface UpdateSubscriptionInput {
@@ -137,6 +143,8 @@ export interface UpdateSubscriptionInput {
   logoUrl?: string;
   notes?: string;
   isActive?: boolean;
+  autopay?: boolean;
+  autopayMaxAmount?: number | null;
 }
 
 export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert';
@@ -198,6 +206,8 @@ export interface WalletSettings {
   topupNgn: number;
   /** Day of month (1–28) for scheduled top-up, or null */
   scheduledDay: number | null;
+  /** UI default for the autopay toggle when creating a new subscription */
+  autopayDefault: boolean;
 }
 
 export interface SubscriptionSummary {

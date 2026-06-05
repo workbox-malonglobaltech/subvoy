@@ -30,6 +30,7 @@ interface SettingsRow {
   threshold_usd_cents: number;
   topup_ngn_kobo: string;
   scheduled_day: number | null;
+  autopay_default: boolean;
 }
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ function toSettings(row: SettingsRow): WalletSettings {
     thresholdUsd: Math.round(row.threshold_usd_cents / 100),
     topupNgn: Math.round(Number(row.topup_ngn_kobo) / 100),
     scheduledDay: row.scheduled_day,
+    autopayDefault: row.autopay_default ?? false,
   };
 }
 
@@ -193,6 +195,10 @@ export async function updateSettings(userId: string, data: Partial<WalletSetting
   if (data.scheduledDay !== undefined) {
     fields.push(`scheduled_day = $${idx++}`);
     values.push(data.scheduledDay);
+  }
+  if (data.autopayDefault !== undefined) {
+    fields.push(`autopay_default = $${idx++}`);
+    values.push(data.autopayDefault);
   }
 
   if (fields.length > 0) {

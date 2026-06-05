@@ -27,6 +27,8 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
   const [nextBillingDate, setNextBillingDate] = useState('');
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
+  const [autopay, setAutopay] = useState(false);
+  const [autopayMax, setAutopayMax] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
@@ -43,9 +45,12 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
       setNextBillingDate(initial.nextBillingDate);
       setCategory(initial.category ?? '');
       setNotes(initial.notes ?? '');
+      setAutopay(initial.autopay);
+      setAutopayMax(initial.autopayMaxAmount != null ? String(initial.autopayMaxAmount) : '');
     } else {
       setName(''); setAmount(''); setCurrency('USD');
       setBillingCycle('monthly'); setNextBillingDate(''); setCategory(''); setNotes('');
+      setAutopay(false); setAutopayMax('');
     }
     setError('');
     setShowNewCatInput(false);
@@ -57,7 +62,13 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
     api.get<{ builtin: string[]; custom: CustomCategory[] }>('/categories')
       .then(d => setCustomCategories(d.custom))
       .catch(() => {});
-  }, [open]);
+    // For new subscriptions, seed the autopay toggle from the user's default.
+    if (!initial) {
+      api.get<{ autopayDefault: boolean }>('/wallet/settings')
+        .then(s => setAutopay(s.autopayDefault))
+        .catch(() => {});
+    }
+  }, [open, initial]);
 
   async function handleAddCategory() {
     const name = newCatInput.trim();
@@ -81,11 +92,18 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
     setError('');
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) { setError('Amount must be a positive number'); return; }
+    let autopayMaxAmount: number | null = null;
+    if (autopay && autopayMax.trim() !== '') {
+      const cap = parseFloat(autopayMax);
+      if (isNaN(cap) || cap <= 0) { setError('Autopay cap must be a positive number'); return; }
+      autopayMaxAmount = cap;
+    }
     setSaving(true);
     try {
       await onSave({
         name, amount: parsed, currency, billingCycle, nextBillingDate,
         category: category || undefined, notes: notes || undefined,
+        autopay, autopayMaxAmount,
       });
       onClose();
     } catch (err) {
@@ -283,6 +301,46 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
                 maxLength={1000}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               />
+            </div>
+
+            {/* Autopay */}
+            <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <label htmlFor="sub-autopay" className="flex items-start gap-3 cursor-pointer">
+                <input
+                  id="sub-autopay"
+                  type="checkbox"
+                  checked={autopay}
+                  onChange={e => setAutopay(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-gray-900">Pay automatically</span>
+                  <span className="block text-gray-500">
+                    Charge this from your wallet on each billing date.
+                  </span>
+                </span>
+              </label>
+
+              {autopay && (
+                <div className="mt-3 pl-7">
+                  <label htmlFor="sub-autopay-max" className="block text-xs font-medium text-gray-600 mb-1">
+                    Don’t auto-pay if the amount exceeds <span className="text-gray-400">(optional cap)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">{currency}</span>
+                    <input
+                      id="sub-autopay-max"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={autopayMax}
+                      onChange={e => setAutopayMax(e.target.value)}
+                      placeholder="No limit"
+                      className="w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

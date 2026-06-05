@@ -139,6 +139,19 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
                     {days === 0 ? 'Due today' : days < 0 ? `${Math.abs(days)}d overdue` : `Due in ${days}d`}
                   </span>
                 )}
+                {sub.isActive && sub.autopay && (
+                  <span
+                    className="shrink-0 inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"
+                    title={sub.autopayMaxAmount != null
+                      ? `Auto-paid from wallet (up to ${sub.currency} ${sub.autopayMaxAmount})`
+                      : 'Auto-paid from wallet on the billing date'}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Auto
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right shrink-0">
