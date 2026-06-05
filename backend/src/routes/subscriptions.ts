@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import * as subModel from '../models/subscription';
-import * as walletModel from '../models/wallet.model';
-import * as notifModel from '../models/notification';
+import { chargeSubscription } from '../services/payment.service';
 import { pool } from '../db';
 
 const router = Router();
@@ -170,76 +169,47 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
 // ── POST /subscriptions/:id/pay ───────────────────────────────────────────────
 /**
- * Pay a subscription from the wallet balance.
+ * Pay a subscription now from the wallet balance.
  *
- * - USD subscriptions deduct from usd_balance (stored in cents).
- * - NGN subscriptions deduct from ngn_balance (stored in kobo).
- * - Returns 402 if the wallet balance is insufficient.
- * - On success: logs a 'payment' transaction, advances next_billing_date by
- *   one billing cycle, creates an in-app notification, returns { subscription, wallet }.
+ * Delegates to the shared payment service (transactional, locks the wallet +
+ * subscription rows). USD deducts from usd_balance (cents); NGN from
+ * ngn_balance (kobo). On success: logs a 'payment' transaction, advances
+ * next_billing_date by one cycle, notifies, and returns { subscription, wallet }.
+ * Returns 402 if the balance is insufficient.
  */
 router.post('/:id/pay', async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const subId  = req.params.id;
 
   try {
-    // 1. Load subscription (must belong to this user and be active)
-    const sub = await subModel.findById(subId, userId);
-    if (!sub) {
-      res.status(404).json({ success: false, data: null, error: 'Subscription not found' });
-      return;
+    const result = await chargeSubscription(userId, subId, { source: 'manual' });
+
+    switch (result.code) {
+      case 'paid':
+        res.status(200).json({
+          success: true,
+          data: { subscription: result.subscription, wallet: result.wallet },
+          error: null,
+        });
+        return;
+      case 'not_found':
+        res.status(404).json({ success: false, data: null, error: 'Subscription not found' });
+        return;
+      case 'paused':
+        res.status(400).json({ success: false, data: null, error: 'Subscription is paused' });
+        return;
+      case 'insufficient':
+        res.status(402).json({
+          success: false,
+          data: null,
+          error: `Insufficient balance. Need ${result.needed}, have ${result.have}.`,
+        });
+        return;
+      default:
+        // 'not_due' / 'exceeds_limit' only arise for source: 'autopay'
+        res.status(400).json({ success: false, data: null, error: 'Payment could not be completed' });
+        return;
     }
-    if (!sub.isActive) {
-      res.status(400).json({ success: false, data: null, error: 'Subscription is paused' });
-      return;
-    }
-
-    // 2. Ensure wallet exists
-    const wallet = await walletModel.findOrCreate(userId);
-
-    // 3. Determine currency and calculate raw (integer) amount to deduct
-    const isNgn        = sub.currency.toUpperCase() === 'NGN';
-    const rawDeduct    = isNgn
-      ? Math.round(sub.amount * 100)   // naira → kobo
-      : Math.round(sub.amount * 100);  // dollars → cents
-    const balance      = isNgn ? wallet.ngnBalance * 100 : wallet.usdBalance * 100;
-
-    // 4. Insufficient balance check
-    if (balance < rawDeduct) {
-      const needed   = isNgn ? `₦${sub.amount.toLocaleString()}` : `$${sub.amount.toFixed(2)}`;
-      const have     = isNgn
-        ? `₦${wallet.ngnBalance.toLocaleString()}`
-        : `$${wallet.usdBalance.toFixed(2)}`;
-      res.status(402).json({
-        success: false,
-        data: null,
-        error: `Insufficient balance. Need ${needed}, have ${have}.`,
-      });
-      return;
-    }
-
-    // 5. Deduct from wallet (negative amount = deduction)
-    const updatedWallet = isNgn
-      ? await walletModel.topUpNgn(userId, -rawDeduct, `Paid: ${sub.name}`, 'payment')
-      : await walletModel.topUpUsd(userId, -rawDeduct, `Paid: ${sub.name}`, 'payment');
-
-    // 6. Advance next_billing_date by one cycle
-    const updatedSub = await subModel.advanceNextBillingDate(subId, userId);
-
-    // 7. In-app notification
-    await notifModel.create({
-      userId,
-      subscriptionId: subId,
-      type: 'payment_reminder',
-      title: `${sub.name} paid`,
-      message: `${sub.currency.toUpperCase() === 'NGN' ? '₦' : '$'}${sub.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} deducted from your ${isNgn ? 'NGN' : 'USD'} wallet. Next billing: ${updatedSub?.nextBillingDate ?? 'N/A'}.`,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: { subscription: updatedSub, wallet: updatedWallet },
-      error: null,
-    });
   } catch (err) {
     console.error(`POST /subscriptions/${subId}/pay error:`, err);
     res.status(500).json({ success: false, data: null, error: 'Payment failed' });

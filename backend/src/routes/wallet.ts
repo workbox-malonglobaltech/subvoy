@@ -39,6 +39,8 @@ const settingsSchema = z.object({
   topupNgn: z.number().positive().max(10_000_000).optional(),
   /** Day 1-28 for scheduled monthly top-up, or null to disable */
   scheduledDay: z.number().int().min(1).max(28).nullable().optional(),
+  /** Default state of the autopay toggle for newly created subscriptions */
+  autopayDefault: z.boolean().optional(),
 });
 
 // ── GET /wallet ───────────────────────────────────────────────────────────────

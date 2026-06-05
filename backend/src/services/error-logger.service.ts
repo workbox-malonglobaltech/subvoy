@@ -59,25 +59,35 @@ export async function logError(opts: LogErrorOptions): Promise<void> {
     recordForAlert();
   }
 
-  // 3. Persist to DB — fire-and-forget so a DB slowdown never blocks responses
-  pool.query(
-    `INSERT INTO error_logs
-       (level, message, stack, route, method, status_code, user_id, context)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [
-      level,
-      message,
-      stack,
-      opts.route ?? null,
-      opts.method ?? null,
-      opts.statusCode ?? null,
-      opts.userId ?? null,
-      opts.context ? JSON.stringify(opts.context) : null,
-    ],
-  ).catch(dbErr => {
-    // If the DB write itself fails, fall back to console only
+  // 3. Persist to DB — fire-and-forget so a DB slowdown never blocks responses.
+  // Wrapped defensively: logging must NEVER throw, otherwise a failure here
+  // could crash the very errorHandler that called us and swallow the real
+  // HTTP response. Promise.resolve() tolerates pool.query throwing synchronously
+  // or returning a non-thenable.
+  try {
+    Promise.resolve(
+      pool.query(
+        `INSERT INTO error_logs
+           (level, message, stack, route, method, status_code, user_id, context)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          level,
+          message,
+          stack,
+          opts.route ?? null,
+          opts.method ?? null,
+          opts.statusCode ?? null,
+          opts.userId ?? null,
+          opts.context ? JSON.stringify(opts.context) : null,
+        ],
+      ),
+    ).catch(dbErr => {
+      // If the DB write itself fails, fall back to console only
+      console.error('[error-logger] Failed to persist error log:', dbErr);
+    });
+  } catch (dbErr) {
     console.error('[error-logger] Failed to persist error log:', dbErr);
-  });
+  }
 }
 
 /** Convenience wrapper — logs at "warn" level. */

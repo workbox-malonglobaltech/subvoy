@@ -100,6 +100,32 @@ export function AutoTopUpPanel({ settings, saving, onChange }: Props) {
           )}
         </div>
       )}
+
+      {/* Autopay default for new subscriptions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">Autopay new subscriptions</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Pre-enable “Pay automatically” when you add a subscription
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={settings.autopayDefault}
+          aria-label="Autopay new subscriptions by default"
+          onClick={() => onChange({ autopayDefault: !settings.autopayDefault })}
+          disabled={saving}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 ${
+            settings.autopayDefault ? 'bg-indigo-600' : 'bg-gray-200'
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
+              settings.autopayDefault ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
     </div>
   );
 }
