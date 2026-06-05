@@ -331,10 +331,14 @@ describe('POST /auth/logout', () => {
   });
 
   it('still returns 200 even when the DB update for token revocation fails', async () => {
-    // getTokenVersion succeeds so auth passes, then UPDATE throws
+    // The authenticate middleware runs two queries before the route handler:
+    // getTokenVersion (version check) and findById (suspension check). Both must
+    // succeed so authentication passes; only then does the route's
+    // incrementTokenVersion UPDATE run — and that is the call we want to fail.
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion (in authenticate)
-      .mockRejectedValueOnce(new Error('db timeout'));           // incrementTokenVersion
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion (middleware)
+      .mockResolvedValueOnce({ rows: [existingUserRow] })       // findById (middleware)
+      .mockRejectedValueOnce(new Error('db timeout'));           // incrementTokenVersion (route)
 
     const res = await request(app)
       .post('/auth/logout')
@@ -380,31 +384,40 @@ describe('GET /auth/me', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('returns 404 when the authenticated user is no longer in the database', async () => {
-    // getTokenVersion succeeds so authentication passes
+  it('returns 401 when the authenticated user is no longer in the database', async () => {
+    // The authenticate middleware itself re-verifies the user against the DB
+    // (getTokenVersion + findById) BEFORE the route handler runs. If the user
+    // has been deleted, the middleware short-circuits with 401 "Session expired"
+    // — this is the intended hardened contract: a valid-looking token for a
+    // non-existent user must be treated as an invalid session, not surfaced as
+    // a 404 (which would leak that the account is simply gone).
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion
-      .mockResolvedValueOnce({ rows: [] });                     // findById → user deleted
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion (middleware)
+      .mockResolvedValueOnce({ rows: [] });                     // findById (middleware) → user deleted
 
     const res = await request(app)
       .get('/auth/me')
       .set('Cookie', AUTH_COOKIE);
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
-    expect(res.body.error).toMatch(/user not found/i);
+    expect(res.body.error).toMatch(/session expired/i);
   });
 
-  it('returns 500 when the database throws', async () => {
+  it('returns 401 when the database throws during authentication', async () => {
+    // findById in the authenticate middleware throws. The middleware's catch
+    // block converts any thrown error into a 401 ("Invalid or expired token")
+    // rather than letting it bubble to a 500 — failing closed is the secure
+    // contract for an auth gate.
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion
-      .mockRejectedValueOnce(new Error('db down'));              // findById → throws
+      .mockResolvedValueOnce({ rows: [{ token_version: 0 }] }) // getTokenVersion (middleware)
+      .mockRejectedValueOnce(new Error('db down'));              // findById (middleware) → throws
 
     const res = await request(app)
       .get('/auth/me')
       .set('Cookie', AUTH_COOKIE);
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
   });
 });
