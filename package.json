@@ -1,0 +1,25 @@
+{
+  "name": "subvoy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "test": "npm run test --workspace=backend --if-present",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cypress": "^15.13.1"
+  }
+}

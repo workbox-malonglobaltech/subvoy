@@ -1,0 +1,245 @@
+import { useState } from 'react';
+import { api } from '../lib/api';
+import type { WalletTopUpInput } from '../../../src/shared/types';
+
+interface Props {
+  onClose: () => void;
+  onSubmit: (input: WalletTopUpInput) => Promise<void>;
+}
+
+// Detect if Paystack is configured in this environment.
+// Set VITE_PAYSTACK_PUBLIC_KEY in your .env (not needed server-side — just for UI toggle).
+const PAYSTACK_ENABLED = Boolean(import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
+
+const MOCK_RATE = 1600; // ₦1,600 per $1 — kept in sync with backend
+
+export function TopUpModal({ onClose, onSubmit }: Props) {
+  const [amountNgn, setAmountNgn]         = useState('');
+  const [destination, setDestination]     = useState<'ngn' | 'usd'>('usd');
+  const [fundingSource, setFundingSource] = useState('GTBank');
+  const [submitting, setSubmitting]       = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+
+  const parsedNgn  = parseFloat(amountNgn) || 0;
+  const usdEstimate = destination === 'usd' && parsedNgn > 0
+    ? (parsedNgn / MOCK_RATE).toFixed(2)
+    : null;
+
+  // ── Paystack flow ──────────────────────────────────────────────────────────
+
+  async function handlePaystack() {
+    const amount = parseFloat(amountNgn);
+    if (!amount || amount < 100) { setError('Minimum top-up is ₦100'); return; }
+    if (amount > 10_000_000)     { setError('Amount cannot exceed ₦10,000,000'); return; }
+
+    setError(null);
+    setSubmitting(true);
+    try {
+      const data = await api.post<{ authorizationUrl: string; reference: string }>(
+        '/wallet/topup/initiate',
+        { amountNgn: amount, destination }
+      );
+      // Redirect to Paystack's hosted checkout page
+      window.location.href = data.authorizationUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start payment');
+      setSubmitting(false);
+    }
+  }
+
+  // ── Mock flow (dev / no Paystack key) ─────────────────────────────────────
+
+  async function handleMock(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseFloat(amountNgn);
+    if (!amount || amount <= 0)  { setError('Enter a valid amount'); return; }
+    if (amount > 10_000_000)     { setError('Amount cannot exceed ₦10,000,000'); return; }
+
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onSubmit({ amountNgn: amount, destination, fundingSource });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Top-up failed');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="topup-title"
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <h2 id="topup-title" className="text-lg font-semibold text-gray-900">Fund Wallet</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+
+          {/* Destination toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['usd', 'ngn'] as const).map(dest => (
+                <button
+                  key={dest}
+                  type="button"
+                  onClick={() => setDestination(dest)}
+                  className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors text-center ${
+                    destination === dest
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="text-base">{dest === 'usd' ? '💳' : '🏦'}</div>
+                  <div>{dest === 'usd' ? 'USD Card' : 'NGN Balance'}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {dest === 'usd' ? 'for subscriptions' : 'local payments'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label htmlFor="topup-amount" className="block text-sm font-medium text-gray-700 mb-1">
+              Amount (₦)
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">₦</span>
+              <input
+                id="topup-amount"
+                type="number"
+                min="100"
+                step="any"
+                value={amountNgn}
+                onChange={e => setAmountNgn(e.target.value)}
+                placeholder="5,000"
+                className="w-full rounded-lg border border-gray-300 py-2.5 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            {usdEstimate && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                ≈ ${usdEstimate} USD at ₦{MOCK_RATE.toLocaleString()}/$
+              </p>
+            )}
+          </div>
+
+          {/* Paystack mode */}
+          {PAYSTACK_ENABLED ? (
+            <>
+              <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-700 flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>
+                  Pay securely with your card or bank transfer via Paystack.
+                  Your naira lands in Subvoy instantly after payment.
+                </span>
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePaystack}
+                  disabled={submitting || !parsedNgn}
+                  className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Redirecting…
+                    </>
+                  ) : (
+                    <>
+                      Pay{parsedNgn > 0 ? ` ₦${parsedNgn.toLocaleString()}` : ''} with Paystack
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Mock / dev mode */
+            <form onSubmit={handleMock} className="space-y-4">
+              <div>
+                <label htmlFor="topup-source" className="block text-sm font-medium text-gray-700 mb-1">
+                  Funding Source
+                </label>
+                <select
+                  id="topup-source"
+                  value={fundingSource}
+                  onChange={e => setFundingSource(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 py-2.5 px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  {['GTBank','Access Bank','Zenith Bank','First Bank','UBA','Kuda','Opay','Other'].map(src => (
+                    <option key={src} value={src}>{src}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 text-xs text-amber-700 flex items-start gap-2">
+                <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  <strong>Dev mode</strong> — no real money moves. Set <code>VITE_PAYSTACK_PUBLIC_KEY</code> to enable live payments.
+                </span>
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                >
+                  {submitting ? 'Processing…' : 'Simulate Top-up'}
+                </button>
+              </div>
+            </form>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}

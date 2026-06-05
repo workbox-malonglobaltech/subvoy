@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-label="Subvoy 128px icon">
+  <defs>
+    <linearGradient id="g128" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+    <!-- Subtle inner shadow/glow -->
+    <filter id="inner-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="128" height="128" rx="28" fill="url(#g128)"/>
+
+  <!-- Subtle top sheen -->
+  <rect width="128" height="64" rx="28" fill="white" fill-opacity="0.05"/>
+
+  <!-- Back card (rotated) -->
+  <rect x="34" y="26" width="64" height="40" rx="9" fill="white" fill-opacity="0.25" transform="rotate(-6 66 46)"/>
+
+  <!-- Front card -->
+  <rect x="26" y="44" width="66" height="42" rx="9" fill="white"/>
+
+  <!-- Card chip (EMV) -->
+  <rect x="35" y="54" width="18" height="13" rx="3" fill="#C7D2FE"/>
+  <!-- Chip lines -->
+  <line x1="35" y1="60" x2="53" y2="60" stroke="#A5B4FC" stroke-width="1"/>
+  <line x1="44" y1="54" x2="44" y2="67" stroke="#A5B4FC" stroke-width="1"/>
+
+  <!-- Card number dots -->
+  <circle cx="62" cy="61" r="2" fill="#E0E7FF"/>
+  <circle cx="70" cy="61" r="2" fill="#E0E7FF"/>
+  <circle cx="78" cy="61" r="2" fill="#E0E7FF"/>
+  <circle cx="86" cy="61" r="2" fill="#E0E7FF"/>
+
+  <!-- Card data lines -->
+  <rect x="35" y="74" width="48" height="5" rx="2.5" fill="#E0E7FF"/>
+  <rect x="35" y="82" width="34" height="5" rx="2.5" fill="#E0E7FF"/>
+
+  <!-- Refresh/subscription cycle badge -->
+  <circle cx="92" cy="36" r="20" fill="#1E1B4B"/>
+  <circle cx="92" cy="36" r="19" fill="none" stroke="#4338CA" stroke-width="1"/>
+  <!-- Arc (270° sweep) -->
+  <path d="M 92 18 A 18 18 0 1 1 75.3 46.5" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Arrowhead -->
+  <path d="M 72 43 L 75.3 46.5 L 79.5 44.5" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

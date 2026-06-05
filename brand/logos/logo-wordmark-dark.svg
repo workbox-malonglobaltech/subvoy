@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 40" fill="none" role="img" aria-label="Subvoy wordmark">
+  <!-- Wordmark-only lockup — use when symbol has already been established -->
+  <text
+    x="0"
+    y="30"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="32"
+    font-weight="400"
+    letter-spacing="-0.8"
+    fill="#111827"
+  >Sub</text>
+  <text
+    x="56"
+    y="30"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="32"
+    font-weight="700"
+    letter-spacing="-0.8"
+    fill="#4F46E5"
+  >voy</text>
+</svg>

@@ -1,0 +1,61 @@
+{
+  "// CLAUDE CODE TEAM SETTINGS": "Edit this file to configure your dev team setup.",
+
+  "env": {
+    "NODE_ENV": "development"
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "// description": "Block Claude from modifying protected files (.env, secrets, lock files)",
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/protect-files.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "// description": "Log every file edit to .claude/edit-log.txt for audit trail",
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-notify.sh\""
+          }
+        ]
+      }
+    ]
+  },
+
+  "permissions": {
+    "// description": "Commands Claude is never allowed to run, regardless of context",
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo rm *)",
+      "Bash(git push --force)",
+      "Bash(git push -f)",
+      "Bash(DROP TABLE*)",
+      "Bash(DELETE FROM * WHERE 1=1)"
+    ]
+  },
+
+  "// MCP_SERVERS": "Uncomment and configure the MCP servers you want to connect",
+  "mcpServers": {
+    "// github": {
+      "// note": "Connect to GitHub for PR reviews, issue tracking, and branch management",
+      "// command": "npx",
+      "// args": ["@modelcontextprotocol/server-github"],
+      "// env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+    },
+    "// postgres": {
+      "// note": "Connect directly to your PostgreSQL database",
+      "// command": "npx",
+      "// args": ["@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
+    }
+  }
+}

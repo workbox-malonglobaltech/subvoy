@@ -1,0 +1,3 @@
+ALTER TABLE notification_preferences
+  ADD COLUMN IF NOT EXISTS budget_alert_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS budget_limit NUMERIC(12, 2) DEFAULT NULL;

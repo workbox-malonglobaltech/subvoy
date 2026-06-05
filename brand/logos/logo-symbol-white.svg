@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Subvoy symbol (white)">
+  <!-- White version for use on dark/colored backgrounds -->
+
+  <!-- Background rounded square (transparent — place over your own bg) -->
+  <rect width="64" height="64" rx="14" fill="white" fill-opacity="0.15"/>
+
+  <!-- Back card -->
+  <rect x="19" y="15" width="30" height="19" rx="4.5" fill="white" fill-opacity="0.35" transform="rotate(-5 34 24.5)"/>
+
+  <!-- Front card -->
+  <rect x="13" y="23" width="33" height="21" rx="4.5" fill="white"/>
+
+  <!-- Card chip -->
+  <rect x="18" y="28" width="8" height="6" rx="1.5" fill="white" fill-opacity="0.4"/>
+
+  <!-- Card lines -->
+  <rect x="18" y="37" width="22" height="2.5" rx="1.25" fill="white" fill-opacity="0.4"/>
+  <rect x="18" y="41" width="15" height="2.5" rx="1.25" fill="white" fill-opacity="0.4"/>
+
+  <!-- Refresh arrow circle -->
+  <circle cx="46" cy="19" r="9" fill="white" fill-opacity="0.2"/>
+  <path d="M 46 11.5 A 7.5 7.5 0 1 1 39.2 22.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 37.5 20 L 39.2 22.5 L 42 21.2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

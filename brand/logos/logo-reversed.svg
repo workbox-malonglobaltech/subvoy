@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 56" fill="none" role="img" aria-label="Subvoy (reversed — for dark backgrounds)">
+  <!-- Dark background panel (remove this rect if placing on your own dark bg) -->
+  <rect width="200" height="56" rx="10" fill="#111827"/>
+
+  <defs>
+    <linearGradient id="sym-grad-r" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Symbol -->
+  <rect x="8" y="4" width="48" height="48" rx="12" fill="url(#sym-grad-r)"/>
+
+  <rect x="19" y="17" width="26" height="17" rx="4" fill="white" fill-opacity="0.28" transform="rotate(-5 33 25.5)"/>
+  <rect x="14" y="24" width="29" height="18" rx="4" fill="white"/>
+  <rect x="18" y="29" width="7" height="5" rx="1.5" fill="#C7D2FE"/>
+  <rect x="18" y="36" width="19" height="2" rx="1" fill="#E0E7FF"/>
+  <rect x="18" y="40" width="13" height="2" rx="1" fill="#E0E7FF"/>
+  <circle cx="43" cy="21" r="8" fill="#312E81" fill-opacity="0.85"/>
+  <path d="M 43 14.5 A 6.5 6.5 0 1 1 37 24" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M 35.5 21.8 L 37 24 L 39.5 22.8" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Wordmark — white -->
+  <text
+    x="72"
+    y="38"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="26"
+    font-weight="400"
+    letter-spacing="-0.5"
+    fill="white"
+    fill-opacity="0.85"
+  >Sub</text>
+  <text
+    x="111"
+    y="38"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="26"
+    font-weight="700"
+    letter-spacing="-0.5"
+    fill="#A5B4FC"
+  >voy</text>
+</svg>
