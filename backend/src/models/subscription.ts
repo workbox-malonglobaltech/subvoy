@@ -13,6 +13,8 @@ interface SubscriptionRow {
   logo_url: string | null;
   notes: string | null;
   is_active: boolean;
+  autopay: boolean;
+  autopay_max_amount: string | null;
   last_known_amount: string | null;
   created_at: Date;
   updated_at: Date;
@@ -30,6 +32,8 @@ function toSubscription(row: SubscriptionRow): Subscription {
     logoUrl: row.logo_url,
     notes: row.notes,
     isActive: row.is_active,
+    autopay: row.autopay ?? false,
+    autopayMaxAmount: row.autopay_max_amount != null ? parseFloat(row.autopay_max_amount) : null,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
@@ -54,8 +58,9 @@ export async function findById(id: string, userId: string): Promise<Subscription
 
 export async function create(userId: string, data: CreateSubscriptionInput): Promise<Subscription> {
   const { rows } = await pool.query<SubscriptionRow>(
-    `INSERT INTO subscriptions (user_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+    `INSERT INTO subscriptions
+       (user_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes, autopay, autopay_max_amount)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
     [
       userId,
       data.name,
@@ -66,6 +71,8 @@ export async function create(userId: string, data: CreateSubscriptionInput): Pro
       data.category ?? null,
       data.logoUrl ?? null,
       data.notes ?? null,
+      data.autopay ?? false,
+      data.autopayMaxAmount ?? null,
     ]
   );
   return toSubscription(rows[0]);
@@ -93,6 +100,8 @@ export async function update(
   if (data.logoUrl !== undefined) { fields.push(`logo_url = $${idx++}`); values.push(data.logoUrl); }
   if (data.notes !== undefined) { fields.push(`notes = $${idx++}`); values.push(data.notes); }
   if (data.isActive !== undefined) { fields.push(`is_active = $${idx++}`); values.push(data.isActive); }
+  if (data.autopay !== undefined) { fields.push(`autopay = $${idx++}`); values.push(data.autopay); }
+  if (data.autopayMaxAmount !== undefined) { fields.push(`autopay_max_amount = $${idx++}`); values.push(data.autopayMaxAmount); }
 
   if (fields.length === 0) return findById(id, userId);
 
