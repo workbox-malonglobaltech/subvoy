@@ -1,0 +1,57 @@
+name: Deploy
+
+# Pushing to `staging` deploys to the staging environment; pushing to `main`
+# deploys to production. Can also be run manually from the Actions tab.
+#
+# REQUIRED per-environment secrets (Settings → Environments → staging|production):
+#   DEPLOY_HOST        server hostname or IP
+#   DEPLOY_USER        SSH user
+#   DEPLOY_SSH_KEY     private key authorised on the server
+#   DEPLOY_PATH        absolute path to the checkout on the server (e.g. /var/www/subvoy)
+#
+# The migration step uses the server's own .env (DATABASE_URL etc.), so no DB
+# secrets are needed here. The job no-ops with a clear message if DEPLOY_HOST is
+# unset, so enabling an environment is purely a matter of adding its secrets.
+
+on:
+  push:
+    branches: [staging, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - name: Guard — require deploy secrets
+        id: guard
+        run: |
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "::warning::DEPLOY_HOST is not set for this environment — skipping deploy. Add environment secrets to enable."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        if: steps.guard.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git fetch --all
+            git reset --hard origin/${{ github.ref_name }}
+            npm ci
+            npm run db:migrate          # idempotent — skips already-applied migrations
+            npm run build
+            pm2 reload subvoy-backend --update-env || pm2 start ecosystem.config.cjs
+            pm2 save
