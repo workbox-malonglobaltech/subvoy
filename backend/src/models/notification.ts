@@ -65,16 +65,28 @@ export async function markAllRead(userId: string): Promise<void> {
 export async function create(data: {
   userId: string;
   subscriptionId?: string;
+  complianceItemId?: string;
   type?: string;
   title: string;
   message: string;
 }): Promise<Notification> {
   const { rows } = await pool.query<NotificationRow>(
-    `INSERT INTO notifications (user_id, subscription_id, type, title, message)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [data.userId, data.subscriptionId ?? null, data.type ?? 'payment_reminder', data.title, data.message]
+    `INSERT INTO notifications (user_id, subscription_id, compliance_item_id, type, title, message)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [data.userId, data.subscriptionId ?? null, data.complianceItemId ?? null, data.type ?? 'payment_reminder', data.title, data.message]
   );
   return toNotification(rows[0]);
+}
+
+/** True if a notification already exists today for this compliance item (dedup). */
+export async function alreadyComplianceNotifiedToday(userId: string, complianceItemId: string): Promise<boolean> {
+  const { rows } = await pool.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM notifications
+     WHERE user_id = $1 AND compliance_item_id = $2
+       AND created_at >= CURRENT_DATE`,
+    [userId, complianceItemId]
+  );
+  return parseInt(rows[0].count, 10) > 0;
 }
 
 export async function alreadyNotifiedToday(userId: string, subscriptionId: string): Promise<boolean> {

@@ -2,6 +2,7 @@ import { pool } from '../db';
 import * as notifModel from '../models/notification';
 import * as subModel from '../models/subscription';
 import { sendReminderEmail, sendBudgetAlertEmail } from './email.service';
+import { runComplianceReminderScan } from './compliance-reminder.service';
 
 interface DueSubscription {
   sub_id: string;
@@ -216,4 +217,12 @@ export async function runReminderScan(): Promise<void> {
   }
 
   console.log(`[Reminder] Price change scan complete — ${priceRows.length} change(s) detected`);
+
+  // ── Compliance reminders ─────────────────────────────────────────────────────
+  // Isolated so a compliance-scan failure never aborts the subscription reminders.
+  try {
+    await runComplianceReminderScan();
+  } catch (err) {
+    console.error('[Reminder] Compliance reminder scan failed:', err);
+  }
 }

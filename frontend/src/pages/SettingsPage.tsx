@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NavBar } from '../components/NavBar';
+import { TeamManagement } from '../components/TeamManagement';
 
 interface Prefs {
   emailEnabled: boolean;
@@ -16,6 +18,7 @@ interface CustomCategory { id: string; name: string; }
 
 export function SettingsPage() {
   const { user, logout, updateProfile } = useAuth();
+  const { active } = useWorkspace();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -253,6 +256,9 @@ export function SettingsPage() {
             </div>
           </dl>
         </section>
+
+        {/* ── Team (Business workspaces only) ───────────────────────────────── */}
+        {active?.type === 'business' && <TeamManagement />}
 
         {/* ── Change Password ───────────────────────────────────────────────── */}
         <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm" aria-labelledby="password-heading">

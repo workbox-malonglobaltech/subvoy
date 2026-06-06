@@ -1,0 +1,184 @@
+import { useState, useEffect, FormEvent } from 'react';
+import {
+  ComplianceItem,
+  CreateComplianceItemInput,
+  ComplianceCadence,
+} from '../../../src/shared/types';
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  onSave: (data: CreateComplianceItemInput) => Promise<void>;
+  initial?: ComplianceItem | null;
+}
+
+const CADENCES: { value: ComplianceCadence; label: string }[] = [
+  { value: 'one_off', label: 'One-off' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'yearly', label: 'Yearly' },
+];
+
+function parseOffsets(input: string): number[] {
+  return input
+    .split(',')
+    .map(s => parseInt(s.trim(), 10))
+    .filter(n => !isNaN(n) && n >= 0 && n <= 365);
+}
+
+export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
+  const [title, setTitle] = useState('');
+  const [authority, setAuthority] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [cadence, setCadence] = useState<ComplianceCadence>('yearly');
+  const [dueDate, setDueDate] = useState('');
+  const [reminderOffsets, setReminderOffsets] = useState('30, 7, 1');
+  const [penaltyNote, setPenaltyNote] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (initial) {
+      setTitle(initial.title);
+      setAuthority(initial.authority ?? '');
+      setReferenceNumber(initial.referenceNumber ?? '');
+      setCadence(initial.cadence);
+      setDueDate(initial.dueDate);
+      setReminderOffsets(initial.reminderOffsets.join(', '));
+      setPenaltyNote(initial.penaltyNote ?? '');
+      setDescription(initial.description ?? '');
+    } else {
+      setTitle(''); setAuthority(''); setReferenceNumber('');
+      setCadence('yearly'); setDueDate(''); setReminderOffsets('30, 7, 1');
+      setPenaltyNote(''); setDescription('');
+    }
+    setError('');
+  }, [initial, open]);
+
+  if (!open) return null;
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!title.trim()) { setError('Title is required'); return; }
+    if (!dueDate) { setError('Due date is required'); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        title: title.trim(),
+        authority: authority.trim() || undefined,
+        referenceNumber: referenceNumber.trim() || undefined,
+        cadence,
+        dueDate,
+        reminderOffsets: parseOffsets(reminderOffsets),
+        penaltyNote: penaltyNote.trim() || undefined,
+        description: description.trim() || undefined,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compliance-modal-title"
+    >
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 id="compliance-modal-title" className="text-lg font-semibold text-gray-900">
+            {initial ? 'Edit Obligation' : 'Add Compliance Obligation'}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close modal">&times;</button>
+        </div>
+
+        {error && (
+          <div role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">{error}</div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div>
+            <label htmlFor="c-title" className="block text-sm font-medium text-gray-700 mb-1">Obligation</label>
+            <input id="c-title" required value={title} onChange={e => setTitle(e.target.value)} maxLength={255}
+              placeholder="e.g. Annual return filing"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="c-authority" className="block text-sm font-medium text-gray-700 mb-1">
+                Authority <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input id="c-authority" value={authority} onChange={e => setAuthority(e.target.value)} maxLength={255}
+                placeholder="e.g. CAC, FIRS, IRS"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label htmlFor="c-ref" className="block text-sm font-medium text-gray-700 mb-1">
+                Reference # <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input id="c-ref" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} maxLength={120}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label htmlFor="c-cadence" className="block text-sm font-medium text-gray-700 mb-1">Cadence</label>
+              <select id="c-cadence" value={cadence} onChange={e => setCadence(e.target.value as ComplianceCadence)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                {CADENCES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="c-due" className="block text-sm font-medium text-gray-700 mb-1">Due date</label>
+              <input id="c-due" required type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="c-offsets" className="block text-sm font-medium text-gray-700 mb-1">
+              Remind me (days before) <span className="text-gray-400 font-normal">comma-separated</span>
+            </label>
+            <input id="c-offsets" value={reminderOffsets} onChange={e => setReminderOffsets(e.target.value)}
+              placeholder="30, 7, 1"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div>
+            <label htmlFor="c-penalty" className="block text-sm font-medium text-gray-700 mb-1">
+              Penalty for late filing <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input id="c-penalty" value={penaltyNote} onChange={e => setPenaltyNote(e.target.value)} maxLength={1000}
+              placeholder="e.g. ₦50,000 + ₦5,000/month"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div>
+            <label htmlFor="c-desc" className="block text-sm font-medium text-gray-700 mb-1">
+              Notes <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea id="c-desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} maxLength={2000}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="submit" disabled={saving}
+              className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              {saving ? 'Saving…' : initial ? 'Save changes' : 'Add obligation'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

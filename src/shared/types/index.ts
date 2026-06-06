@@ -37,6 +37,66 @@ export interface WorkspaceMember {
   createdAt: string;
 }
 
+/** A workspace member joined with the user's identity, for team management UIs. */
+export interface WorkspaceMemberDetail {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
+// ── Compliance obligations (Business workspaces) ────────────────────────────────
+
+export type ComplianceCadence = 'one_off' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type ComplianceStatus = 'open' | 'submitted' | 'completed';
+
+export interface ComplianceItem {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description: string | null;
+  authority: string | null;
+  referenceNumber: string | null;
+  jurisdiction: string | null;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets: number[];
+  status: ComplianceStatus;
+  penaltyNote: string | null;
+  isActive: boolean;
+  /** Derived: due_date < today AND status !== 'completed' */
+  overdue: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateComplianceItemInput {
+  title: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets?: number[];
+  penaltyNote?: string;
+}
+
+export interface UpdateComplianceItemInput {
+  title?: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence?: ComplianceCadence;
+  dueDate?: string;
+  reminderOffsets?: number[];
+  status?: ComplianceStatus;
+  penaltyNote?: string;
+  isActive?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -180,7 +240,7 @@ export interface UpdateSubscriptionInput {
   autopayMaxAmount?: number | null;
 }
 
-export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert';
+export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert' | 'compliance_reminder';
 
 export interface AppNotification {
   id: string;

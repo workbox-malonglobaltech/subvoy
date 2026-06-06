@@ -354,6 +354,69 @@ export async function sendReminderEmail(data: {
   });
 }
 
+// ── Compliance reminder ───────────────────────────────────────────────────────
+
+export async function sendComplianceReminderEmail(data: {
+  toEmail: string;
+  userName: string;
+  title: string;
+  authority: string | null;
+  dueDate: string;
+  daysUntil: number;   // negative if overdue
+}): Promise<void> {
+  const firstName = data.userName.split(' ')[0];
+  const overdue   = data.daysUntil < 0;
+  const isToday   = data.daysUntil === 0;
+  const urgent    = data.daysUntil <= 1;
+
+  const whenLabel = overdue
+    ? `<strong style="color:#EF4444">${Math.abs(data.daysUntil)} day${Math.abs(data.daysUntil) !== 1 ? 's' : ''} overdue</strong>`
+    : isToday
+      ? '<strong style="color:#EF4444">today</strong>'
+      : `in <strong>${data.daysUntil} day${data.daysUntil !== 1 ? 's' : ''}</strong>`;
+
+  const urgencyColor = urgent || overdue ? '#EF4444' : data.daysUntil <= 7 ? '#F59E0B' : '#4F46E5';
+  const badgeBg      = urgent || overdue ? '#FEF2F2' : data.daysUntil <= 7 ? '#FFFBEB' : '#EEF2FF';
+  const badgeBorder  = urgent || overdue ? '#FECACA' : data.daysUntil <= 7 ? '#FDE68A' : '#C7D2FE';
+  const headerColor  = urgent || overdue
+    ? 'linear-gradient(135deg, #F87171 0%, #DC2626 100%)'
+    : 'linear-gradient(135deg, #818CF8 0%, #4338CA 100%)';
+
+  const content = `
+    ${greeting(firstName)}
+    ${para(`Your compliance obligation <strong>${esc(data.title)}</strong> is due ${whenLabel}.`)}
+
+    ${infoCard(`
+      <p style="margin:0;font-size:20px;font-weight:800;color:#111827">${esc(data.title)}</p>
+      ${data.authority ? `<p style="margin:4px 0 0;font-size:13px;color:#6B7280">${esc(data.authority)}</p>` : ''}
+      <p style="margin:8px 0 0;font-size:13px;color:#9CA3AF">Due: ${esc(data.dueDate)}</p>
+    `, badgeBg, badgeBorder)}
+
+    ${overdue
+      ? para('⚠ <strong>This deadline has passed.</strong> File as soon as possible to limit any penalties.')
+      : para('Make sure this is filed before the deadline to avoid penalties.', true)}
+
+    ${ctaButton('View Compliance →', `${appUrl()}/compliance`, urgencyColor)}
+  `;
+
+  const subject = overdue
+    ? `⚠ ${data.title} is overdue`
+    : isToday
+      ? `⚡ ${data.title} is due today`
+      : `📋 ${data.title} is due in ${data.daysUntil} day${data.daysUntil !== 1 ? 's' : ''}`;
+
+  await send({
+    to:      data.toEmail,
+    subject,
+    html:    layout({
+      previewText: `${data.title} — due ${data.dueDate}`,
+      headerLabel: overdue ? 'Overdue' : isToday ? 'Due today' : `Due in ${data.daysUntil} days`,
+      headerColor,
+      content,
+    }),
+  });
+}
+
 // ── Budget alert ──────────────────────────────────────────────────────────────
 
 export async function sendBudgetAlertEmail(data: {

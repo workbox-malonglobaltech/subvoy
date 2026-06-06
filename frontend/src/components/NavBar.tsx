@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NotificationBell } from './NotificationBell';
 import { LogoMark } from './LogoMark';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -18,14 +19,19 @@ interface NavBarProps {
 //   5. Import      — occasional utility, near end
 //   6. Settings    — admin/configuration, always last
 
-const NAV_ITEMS = [
+interface NavItem { to: string; label: string }
+
+const BASE_NAV_ITEMS: NavItem[] = [
   { to: '/',         label: 'Dashboard' },
   { to: '/analytics',label: 'Analytics' },
   { to: '/reports',  label: 'Reports'   },
   { to: '/wallet',   label: 'Wallet'    },
   { to: '/import',   label: 'Import'    },
   { to: '/settings', label: 'Settings'  },
-] as const;
+];
+
+// Compliance is only shown in Business workspaces.
+const COMPLIANCE_ITEM: NavItem = { to: '/compliance', label: 'Compliance' };
 
 // ── Icons (24×24 Heroicons outline) ──────────────────────────────────────────
 const NAV_ICONS: Record<string, React.ReactNode> = {
@@ -43,6 +49,11 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
     // Clipboard-check — payment records
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  ),
+  '/compliance': (
+    // Shield-check — compliance / regulatory
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
   ),
   '/wallet': (
     // Credit card — financial balance
@@ -69,8 +80,14 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
 
 export function NavBar({ actions }: NavBarProps) {
   const { user, logout } = useAuth();
+  const { active } = useWorkspace();
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
+
+  // Insert Compliance (after Reports) only for Business workspaces.
+  const navItems: NavItem[] = active?.type === 'business'
+    ? [...BASE_NAV_ITEMS.slice(0, 3), COMPLIANCE_ITEM, ...BASE_NAV_ITEMS.slice(3)]
+    : BASE_NAV_ITEMS;
 
   /** Returns true if the nav item should be highlighted */
   function isActive(to: string): boolean {
@@ -94,7 +111,7 @@ export function NavBar({ actions }: NavBarProps) {
 
         {/* Desktop nav pills — icon + label */}
         <nav className="hidden sm:flex items-center gap-0.5" aria-label="Main navigation">
-          {NAV_ITEMS.map(({ to, label }) => {
+          {navItems.map(({ to, label }) => {
             const active = isActive(to);
             return (
               <Link
@@ -170,7 +187,7 @@ export function NavBar({ actions }: NavBarProps) {
           <div className="pb-2 mb-1 border-b border-gray-100">
             <WorkspaceSwitcher />
           </div>
-          {NAV_ITEMS.map(({ to, label }) => {
+          {navItems.map(({ to, label }) => {
             const active = isActive(to);
             return (
               <Link
