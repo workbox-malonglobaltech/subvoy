@@ -20,6 +20,16 @@ jest.mock('../../middleware/authenticate', () => ({
   },
 }));
 
+// Analytics is workspace-scoped — resolve the active workspace deterministically.
+jest.mock('../../middleware/workspaceContext', () => ({
+  workspaceContext: (req: any, _res: any, next: any) => {
+    req.workspace = { id: 'ws-123', type: 'personal', role: 'owner' };
+    next();
+  },
+  requireCapability: () => (_req: any, _res: any, next: any) => next(),
+  requireRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 jest.mock('../../services/auth.service', () => ({
   verifyToken: jest.fn().mockReturnValue({ userId: 'aaaaaaaa-0000-0000-0000-000000000001', tokenVersion: 0 }),
   hashPassword: jest.fn(),
