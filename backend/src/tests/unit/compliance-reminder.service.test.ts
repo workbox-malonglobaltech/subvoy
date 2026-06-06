@@ -8,17 +8,20 @@ jest.mock('../../models/notification', () => ({
   create: jest.fn(),
   alreadyComplianceNotifiedToday: jest.fn(),
 }));
+jest.mock('../../services/email.service', () => ({ sendComplianceReminderEmail: jest.fn() }));
 
 import { runComplianceReminderScan } from '../../services/compliance-reminder.service';
 import { pool } from '../../db';
 import * as notifModel from '../../models/notification';
+import { sendComplianceReminderEmail } from '../../services/email.service';
 
 const query = (pool as unknown as { query: jest.Mock }).query;
 
 function row(over: Partial<Record<string, unknown>> = {}) {
   return {
     item_id: 'c-1', title: 'Annual Return', authority: 'CAC',
-    due_date: new Date('2026-12-31'), days_until: 7, user_id: 'user-1', ...over,
+    due_date: new Date('2026-12-31'), days_until: 7, user_id: 'user-1',
+    user_email: 'biz@test.com', user_name: 'Biz', email_enabled: true, ...over,
   };
 }
 
@@ -29,7 +32,7 @@ beforeEach(() => {
 });
 
 describe('runComplianceReminderScan', () => {
-  it('sends an upcoming reminder for a due-soon item', async () => {
+  it('sends an upcoming reminder (in-app + email) for a due-soon item', async () => {
     query.mockResolvedValueOnce({ rows: [row({ days_until: 7 })] });
 
     const sent = await runComplianceReminderScan();
@@ -39,6 +42,14 @@ describe('runComplianceReminderScan', () => {
     expect(arg).toMatchObject({ userId: 'user-1', complianceItemId: 'c-1', type: 'compliance_reminder' });
     expect(arg.title).toMatch(/due in 7 days/i);
     expect(arg.message).toMatch(/CAC/);
+    expect(sendComplianceReminderEmail).toHaveBeenCalledWith(expect.objectContaining({ toEmail: 'biz@test.com', daysUntil: 7 }));
+  });
+
+  it('skips email when the user disabled email notifications', async () => {
+    query.mockResolvedValueOnce({ rows: [row({ email_enabled: false })] });
+    await runComplianceReminderScan();
+    expect(notifModel.create).toHaveBeenCalledTimes(1);
+    expect(sendComplianceReminderEmail).not.toHaveBeenCalled();
   });
 
   it('uses "due today" copy at offset 0', async () => {

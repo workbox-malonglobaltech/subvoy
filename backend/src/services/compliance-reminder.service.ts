@@ -11,6 +11,7 @@
 
 import { pool } from '../db';
 import * as notifModel from '../models/notification';
+import { sendComplianceReminderEmail } from './email.service';
 
 interface DueComplianceRow {
   item_id: string;
@@ -19,6 +20,9 @@ interface DueComplianceRow {
   due_date: Date;
   days_until: number;   // due_date - CURRENT_DATE, negative if overdue
   user_id: string;
+  user_email: string;
+  user_name: string | null;
+  email_enabled: boolean;
 }
 
 export async function runComplianceReminderScan(): Promise<number> {
@@ -31,8 +35,13 @@ export async function runComplianceReminderScan(): Promise<number> {
       c.authority,
       c.due_date,
       (c.due_date - CURRENT_DATE)   AS days_until,
-      c.user_id
+      c.user_id,
+      u.email                       AS user_email,
+      u.name                        AS user_name,
+      COALESCE(np.email_enabled, TRUE) AS email_enabled
     FROM compliance_items c
+    JOIN users u ON u.id = c.user_id
+    LEFT JOIN notification_preferences np ON np.user_id = c.user_id
     WHERE c.is_active = TRUE
       AND c.status <> 'completed'
       AND (
@@ -67,6 +76,22 @@ export async function runComplianceReminderScan(): Promise<number> {
       title,
       message,
     });
+
+    if (row.email_enabled) {
+      try {
+        await sendComplianceReminderEmail({
+          toEmail: row.user_email,
+          userName: row.user_name ?? row.user_email.split('@')[0],
+          title: row.title,
+          authority: row.authority,
+          dueDate: dueStr,
+          daysUntil: days,
+        });
+      } catch (err) {
+        console.error(`[Compliance] Email failed for ${row.user_email}:`, err);
+      }
+    }
+
     sent++;
   }
 
