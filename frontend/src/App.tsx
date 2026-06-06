@@ -18,6 +18,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { WalletPage } from './pages/WalletPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { CompliancePage } from './pages/CompliancePage';
+import { PlansPage } from './pages/PlansPage';
 import { PaymentCallbackPage } from './pages/PaymentCallbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { InstallBanner } from './components/InstallBanner';
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/wallet" element={<WalletPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/compliance" element={<CompliancePage />} />
+                <Route path="/plans" element={<PlansPage />} />
                 <Route path="/payment/callback" element={<PaymentCallbackPage />} />
               </Route>
 
