@@ -30,6 +30,11 @@ jest.mock('../../jobs/reminder.job', () => ({
   startReminderJob: jest.fn(),
 }));
 
+// Personal-workspace auto-creation runs on register — isolate it from the DB mock.
+jest.mock('../../models/workspace.model', () => ({
+  ensurePersonalWorkspace: jest.fn().mockResolvedValue({ id: 'ws-1', type: 'personal' }),
+}));
+
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are hoisted
 // ---------------------------------------------------------------------------

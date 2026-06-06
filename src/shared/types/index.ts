@@ -8,6 +8,35 @@ export interface ApiResponse<T = unknown> {
 
 export type UserRole = 'user' | 'staff' | 'superadmin';
 
+// ── Workspaces (multi-tenancy) ──────────────────────────────────────────────────
+
+export type WorkspaceType = 'personal' | 'business';
+export type WorkspaceRole = 'owner' | 'admin' | 'member';
+
+/** Obligation kinds a workspace type may contain. */
+export type ObligationKind = 'payment' | 'compliance';
+
+export interface Workspace {
+  id: string;
+  type: WorkspaceType;
+  name: string;
+  /** Current user's role in this workspace (when returned in a membership list) */
+  role?: WorkspaceRole;
+  /** ISO 3166-1 alpha-2 operating country (business), or null */
+  country: string | null;
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   email: string;
