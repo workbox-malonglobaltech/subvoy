@@ -27,6 +27,7 @@ import { AdminErrorsPage } from './pages/admin/AdminErrorsPage';
 import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
 import { AdminAnnouncementsPage } from './pages/admin/AdminAnnouncementsPage';
 import { AdminAuditPage } from './pages/admin/AdminAuditPage';
+import { AdminLimitsPage } from './pages/admin/AdminLimitsPage';
 import './App.css';
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
                 <Route path="errors" element={<AdminErrorsPage />} />
                 <Route path="notifications" element={<AdminNotificationsPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="limits" element={<AdminLimitsPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
               </Route>
 

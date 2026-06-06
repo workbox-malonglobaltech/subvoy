@@ -10,6 +10,7 @@ import errorsRouter       from './errors';
 import notificationsRouter from './notifications';
 import announcementsRouter from './announcements';
 import auditRouter        from './audit';
+import limitsRouter       from './limits';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/errors',        errorsRouter);
 router.use('/notifications', notificationsRouter);
 router.use('/announcements', announcementsRouter);
 router.use('/audit',         auditRouter);
+router.use('/limits',        limitsRouter);
 
 export default router;
