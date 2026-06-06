@@ -1,6 +1,7 @@
 import { Router, Request, Response, CookieOptions } from 'express';
 import { google } from 'googleapis';
 import * as userModel from '../models/user';
+import * as workspaceModel from '../models/workspace.model';
 import { signToken } from '../services/auth.service';
 import { pool } from '../db';
 
@@ -86,6 +87,8 @@ router.get('/google/callback', async (req: Request, res: Response) => {
 
     // Fetch token_version for the JWT
     if (!user) throw new Error('User not found after find-or-create');
+    // Ensure the user has a Personal workspace (idempotent — no-op if it exists).
+    await workspaceModel.ensurePersonalWorkspace(user.id);
     const { rows: vRows } = await pool.query<{ token_version: number }>(
       'SELECT token_version FROM users WHERE id = $1',
       [user.id]

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import * as userModel from '../models/user';
+import * as workspaceModel from '../models/workspace.model';
 import { hashPassword, comparePassword, signToken } from '../services/auth.service';
 import { sendWelcomeEmail } from '../services/email.service';
 import { pool } from '../db';
@@ -44,6 +45,8 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
 
     const passwordHash = await hashPassword(password);
     const user = await userModel.createUser({ email, passwordHash, name });
+    // Every user gets a Personal workspace on signup (idempotent).
+    await workspaceModel.ensurePersonalWorkspace(user.id);
     const token = signToken(user.id, 0); // new users start at token_version 0
 
     res.cookie('token', token, COOKIE_OPTIONS);

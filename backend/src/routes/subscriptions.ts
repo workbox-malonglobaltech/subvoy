@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
+import { workspaceContext } from '../middleware/workspaceContext';
 import * as subModel from '../models/subscription';
 import { chargeSubscription } from '../services/payment.service';
 import { pool } from '../db';
@@ -9,6 +10,8 @@ import { pool } from '../db';
 const router = Router();
 
 router.use(authenticate);
+// Resolve + membership-check the active workspace; sets req.workspace.
+router.use(workspaceContext);
 
 const billingCycleEnum = z.enum(['weekly', 'monthly', 'yearly']);
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -34,7 +37,7 @@ const updateSchema = createSchema.partial().extend({
 // GET /subscriptions/summary — registered FIRST, before /:id, to prevent wildcard shadowing
 router.get('/summary', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const workspaceId = req.workspace!.id;
 
     // Query 1: overall spend + counts
     const { rows: [stats] } = await pool.query<{
@@ -63,8 +66,8 @@ router.get('/summary', async (req: Request, res: Response) => {
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '7 days')::text  AS due_7_days,
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '30 days')::text AS due_30_days
       FROM subscriptions
-      WHERE user_id = $1 AND is_active = TRUE`,
-      [userId]
+      WHERE workspace_id = $1 AND is_active = TRUE`,
+      [workspaceId]
     );
 
     // Query 2: category breakdown (simple GROUP BY — no window functions)
@@ -73,10 +76,10 @@ router.get('/summary', async (req: Request, res: Response) => {
         COALESCE(category, 'Uncategorized') AS category,
         ROUND(SUM(amount)::numeric, 2)::text AS total
       FROM subscriptions
-      WHERE user_id = $1 AND is_active = TRUE
+      WHERE workspace_id = $1 AND is_active = TRUE
       GROUP BY COALESCE(category, 'Uncategorized')
       ORDER BY SUM(amount) DESC`,
-      [userId]
+      [workspaceId]
     );
 
     res.status(200).json({
@@ -101,8 +104,8 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const includeInactive = req.query.includeInactive === 'true';
     const subs = includeInactive
-      ? await subModel.findAllByUserIncludingInactive(req.user!.id)
-      : await subModel.findAllByUser(req.user!.id);
+      ? await subModel.findAllByWorkspaceIncludingInactive(req.workspace!.id)
+      : await subModel.findAllByWorkspace(req.workspace!.id);
     res.status(200).json({ success: true, data: subs, error: null });
   } catch (err) {
     console.error('Get subscriptions error:', err);
@@ -118,7 +121,7 @@ const bulkDeleteSchema = z.object({
 router.post('/bulk-delete', validate(bulkDeleteSchema), async (req: Request, res: Response) => {
   try {
     const { ids } = req.body as z.infer<typeof bulkDeleteSchema>;
-    const count = await subModel.bulkDelete(ids, req.user!.id);
+    const count = await subModel.bulkDelete(ids, req.workspace!.id);
     res.status(200).json({ success: true, data: { deleted: count }, error: null });
   } catch (err) {
     console.error('Bulk delete error:', err);
@@ -128,7 +131,7 @@ router.post('/bulk-delete', validate(bulkDeleteSchema), async (req: Request, res
 
 router.post('/', validate(createSchema), async (req: Request, res: Response) => {
   try {
-    const sub = await subModel.create(req.user!.id, req.body);
+    const sub = await subModel.create(req.workspace!.id, req.user!.id, req.body);
     res.status(201).json({ success: true, data: sub, error: null });
   } catch (err) {
     console.error('Create subscription error:', err);
@@ -138,7 +141,7 @@ router.post('/', validate(createSchema), async (req: Request, res: Response) => 
 
 router.put('/:id', validate(updateSchema), async (req: Request, res: Response) => {
   try {
-    const sub = await subModel.update(req.params.id, req.user!.id, req.body);
+    const sub = await subModel.update(req.params.id, req.workspace!.id, req.body);
     if (!sub) {
       res.status(404).json({ success: false, data: null, error: 'Subscription not found' });
       return;
@@ -154,8 +157,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const hard = req.query.hard === 'true';
     const deleted = hard
-      ? await subModel.hardDelete(req.params.id, req.user!.id)
-      : await subModel.softDelete(req.params.id, req.user!.id);
+      ? await subModel.hardDelete(req.params.id, req.workspace!.id)
+      : await subModel.softDelete(req.params.id, req.workspace!.id);
     if (!deleted) {
       res.status(404).json({ success: false, data: null, error: 'Subscription not found' });
       return;
@@ -178,11 +181,11 @@ router.delete('/:id', async (req: Request, res: Response) => {
  * Returns 402 if the balance is insufficient.
  */
 router.post('/:id/pay', async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const workspaceId = req.workspace!.id;
   const subId  = req.params.id;
 
   try {
-    const result = await chargeSubscription(userId, subId, { source: 'manual' });
+    const result = await chargeSubscription(workspaceId, subId, { source: 'manual' });
 
     switch (result.code) {
       case 'paid':

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { NotificationBell } from './NotificationBell';
 import { LogoMark } from './LogoMark';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 interface NavBarProps {
   /** Page-specific action elements (e.g. "+ Add", "+ Fund") shown in the toolbar */
@@ -84,7 +85,12 @@ export function NavBar({ actions }: NavBarProps) {
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2">
 
         {/* Branded logo mark */}
-        <LogoMark className="mr-2" />
+        <LogoMark className="mr-1" />
+
+        {/* Active workspace switcher */}
+        <div className="mr-1 hidden sm:block">
+          <WorkspaceSwitcher />
+        </div>
 
         {/* Desktop nav pills — icon + label */}
         <nav className="hidden sm:flex items-center gap-0.5" aria-label="Main navigation">
@@ -160,6 +166,10 @@ export function NavBar({ actions }: NavBarProps) {
       {/* ── Mobile dropdown ─────────────────────────────────────────────────── */}
       {menuOpen && (
         <div className="sm:hidden bg-white border-t border-gray-100 px-4 py-2 space-y-0.5" role="menu">
+          {/* Workspace switcher */}
+          <div className="pb-2 mb-1 border-b border-gray-100">
+            <WorkspaceSwitcher />
+          </div>
           {NAV_ITEMS.map(({ to, label }) => {
             const active = isActive(to);
             return (

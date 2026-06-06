@@ -85,7 +85,7 @@ router.post('/detected/:id/confirm', async (req: Request, res: Response) => {
     }
 
     // Add to real subscriptions
-    const sub = await subModel.create(req.user!.id, {
+    const sub = await subModel.createForUser(req.user!.id, {
       name: detected.name,
       amount: detected.amount,
       currency: detected.currency,

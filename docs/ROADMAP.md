@@ -163,13 +163,37 @@ Do-for-you compliance: assisted-first ("prepared filing + human-in-the-loop"), l
 
 ---
 
-## 6. Launch stack (after Phase 0–2; refactor-first)
+## 6. Stack (after Phase 0–2; refactor-first)
 
-- **Frontend:** Cloudflare Pages (`subvoy.com`) — domain already on Cloudflare.
-- **API:** always-on host at `api.subvoy.com` (cron must not sleep). **Leaning Oracle Cloud Always Free VM** (reuses the SSH+PM2 `deploy.yml`); Fly.io alternative needs a Dockerfile. **Not finalized.**
-- **DB:** Neon (free, always-on Postgres).
+| Layer | Pick | Note |
+|---|---|---|
+| Web | **Vercel** (`subvoy.com`) | Vite SPA; point Cloudflare DNS at Vercel |
+| Mobile | **React Native (Expo)** — later | reuses the same API + shared types (API-first) |
+| API | **Express** — host TBD (see fork below) | `api.subvoy.com` |
+| DB | **Supabase** (Postgres + Storage + pg_cron) | also covers compliance-document storage + scheduling; Neon is the pure-Postgres alt — both are Postgres, migrations identical |
+| Email | **Resend** | replace nodemailer SMTP (SMTP drop-in or SDK) |
+| Payments | **Paystack + Stripe**, per-country routing | Paystack = Africa; Stripe = rest of world (see §9) |
+
 - **Routing:** **split origin** — build with `VITE_API_URL=https://api.subvoy.com`; backend CORS allowlists `https://subvoy.com`; cookies `domain=.subvoy.com; SameSite=None; Secure`.
-- Deploy runs `db:migrate` on release; secrets per GitHub Environment (staging/production).
+- **⚠️ Serverless ↔ cron fork (resolve before launch):** the backend runs `node-cron` jobs **in-process**, which serverless (Vercel functions) can't host. Two options:
+  1. **Always-on API** (Fly/Render/Railway/Oracle) — keep in-process cron, least change; or
+  2. **Vercel functions** + convert the 4 jobs to **secured HTTP endpoints** triggered by an external scheduler (GitHub Actions cron / Vercel Cron / Supabase pg_cron / Upstash QStash).
+  Does **not** block Phase 0 (pure Postgres + app code).
+- Deploy runs `db:migrate` on release; secrets per environment.
+
+## 6b. Mobile
+- **React Native (Expo)** consuming the same REST API; shares `src/shared/types`.
+- Reinforces **API-first** discipline (no server-rendered coupling). Auth via the same JWT; mobile stores the token securely (not the web HttpOnly cookie) — plan a token strategy that serves both web (cookie) and mobile (bearer).
+- Build after web v1 is stable.
+
+## 6c. Global from day one
+The app serves users **worldwide**; **country-specific settings are toggled in the super-admin dashboard** (extends the limits registry into a broader platform-config registry).
+
+- **`country_settings` registry** (admin-managed): per-country `enabled`, default currency, payment provider, (later) compliance template packs, date/number formats.
+- **Payments are regional:** Paystack (Africa) + **Stripe (global)** behind a **provider abstraction** routed by the workspace's country. Current wallet/top-up is Paystack-only → must generalize. Tracking + reminders + compliance are global immediately; **payments roll out per country** as providers are enabled.
+- **Per-user / per-workspace timezone** so reminders fire at sensible local times (today cron uses a single `REMINDER_TIMEZONE`). Store `users.timezone` / `workspaces.country`.
+- **Currencies** per country settings (multi-currency + FX already exist).
+- **Later:** i18n/localization; data-residency & privacy (GDPR/NDPR etc.).
 
 ---
 
@@ -183,8 +207,11 @@ Backend 273/273 tests green.
 ---
 
 ## 8. Open decisions (still to settle)
-- [ ] **Backend host**: Oracle vs Fly (leaning Oracle).
+- [ ] **API host / cron model**: always-on API (in-process cron) vs Vercel functions + external scheduler (§6 fork).
+- [ ] **DB**: Supabase (DB + storage + pg_cron) vs Neon (pure Postgres + separate storage) — leaning Supabase.
+- [ ] **Web auth for mobile**: cookie (web) + bearer token (mobile) strategy.
 - [ ] **Brand**: keep everything under "Subvoy" or give the business/compliance side its own name on the shared backend.
-- [ ] **NGN price points** for each tier (placeholders above).
-- [ ] **Starting free cap number** (default ~10) and **hard vs soft** cap (leaning hard).
+- [ ] **Price points** per tier + currency (placeholders above).
+- [ ] **Starting free cap number** (default ~10) and **hard vs soft** cap (leaning hard) — set live by super admin.
+- [ ] **Global payments v1 scope**: which countries/providers enabled at launch (recommend: tracking+reminders+compliance global; payments start with Paystack/Africa, Stripe fast-follow).
 - [ ] Business-specific payment metadata (vendor, cost-center, approver, invoice) — likely post-foundation.

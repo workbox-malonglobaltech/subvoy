@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/auth.service';
 import { getTokenVersion, findById } from '../models/user';
-import { UserRole } from '../../../src/shared/types';
+import { UserRole, WorkspaceType, WorkspaceRole } from '../../../src/shared/types';
 
 declare global {
   namespace Express {
     interface Request {
       user?: { id: string; role: UserRole };
+      /** Active workspace for this request (set by workspaceContext middleware). */
+      workspace?: { id: string; type: WorkspaceType; role: WorkspaceRole };
     }
   }
 }

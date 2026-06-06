@@ -32,6 +32,7 @@ export type ChargeResult =
 
 interface LockedSubRow {
   id: string;
+  user_id: string;
   name: string;
   amount: string;
   currency: string;
@@ -52,9 +53,14 @@ function fmt(amount: number, isNgn: boolean): string {
  *
  * @param opts.source  'manual' ignores the autopay cap and the due-date check
  *                      (the user may pay early); 'autopay' enforces both.
+ *
+ * Scoping note: the subscription is tenant-scoped by `workspaceId`, but the
+ * wallet (and the resulting notification) stay USER-scoped — the wallet owner is
+ * derived from the locked subscription row's `user_id`. Wallets are intentionally
+ * NOT workspace-scoped in this phase.
  */
 export async function chargeSubscription(
-  userId: string,
+  workspaceId: string,
   subId: string,
   opts: { source: ChargeSource } = { source: 'manual' }
 ): Promise<ChargeResult> {
@@ -64,12 +70,12 @@ export async function chargeSubscription(
 
     // 1. Lock the subscription row for the duration of the transaction.
     const { rows: subRows } = await client.query<LockedSubRow>(
-      `SELECT id, name, amount, currency, is_active, autopay_max_amount,
+      `SELECT id, user_id, name, amount, currency, is_active, autopay_max_amount,
               (next_billing_date <= CURRENT_DATE) AS is_due
        FROM subscriptions
-       WHERE id = $1 AND user_id = $2
+       WHERE id = $1 AND workspace_id = $2
        FOR UPDATE`,
-      [subId, userId]
+      [subId, workspaceId]
     );
     const sub = subRows[0];
     if (!sub) {
@@ -81,6 +87,8 @@ export async function chargeSubscription(
       return { code: 'paused' };
     }
 
+    // Wallet owner = the subscription's user (wallet stays user-scoped).
+    const userId = sub.user_id;
     const amount = parseFloat(sub.amount);
     const isNgn = sub.currency.toUpperCase() === 'NGN';
 
@@ -147,9 +155,9 @@ export async function chargeSubscription(
            ELSE next_billing_date
          END,
          updated_at = NOW()
-       WHERE id = $1 AND user_id = $2
+       WHERE id = $1 AND workspace_id = $2
        RETURNING next_billing_date`,
-      [subId, userId]
+      [subId, workspaceId]
     );
     const nextBillingDate = advRows[0].next_billing_date.toISOString().split('T')[0];
 
@@ -167,8 +175,8 @@ export async function chargeSubscription(
 
     // Return canonical, freshly-mapped objects for the API response.
     const [subscription, wallet] = await Promise.all([
-      subModel.findById(subId, userId) as Promise<Subscription>,
-      walletModel.findOrCreate(userId),
+      subModel.findById(subId, workspaceId) as Promise<Subscription>,
+      walletModel.findOrCreate(sub.user_id),
     ]);
     return { code: 'paid', subscription, wallet };
   } catch (err) {
