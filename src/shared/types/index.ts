@@ -231,7 +231,7 @@ export interface UpdateSubscriptionInput {
   autopayMaxAmount?: number | null;
 }
 
-export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert';
+export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert' | 'compliance_reminder';
 
 export interface AppNotification {
   id: string;
