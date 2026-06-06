@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/authenticate';
 import { workspaceContext } from '../middleware/workspaceContext';
 import * as subModel from '../models/subscription';
 import { chargeSubscription } from '../services/payment.service';
+import { getEffectiveLimit, isWithinLimit, UNLIMITED } from '../services/entitlements.service';
 import { pool } from '../db';
 
 const router = Router();
@@ -131,7 +132,26 @@ router.post('/bulk-delete', validate(bulkDeleteSchema), async (req: Request, res
 
 router.post('/', validate(createSchema), async (req: Request, res: Response) => {
   try {
-    const sub = await subModel.create(req.workspace!.id, req.user!.id, req.body);
+    const workspaceId = req.workspace!.id;
+
+    // Free-tier cap: limit active payment obligations per workspace (admin-tunable).
+    const { rows: [{ count }] } = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM subscriptions
+       WHERE workspace_id = $1 AND kind = 'payment' AND is_active = TRUE`,
+      [workspaceId]
+    );
+    const current = parseInt(count, 10);
+    if (!(await isWithinLimit(workspaceId, 'max_payment_obligations', current))) {
+      const limit = await getEffectiveLimit(workspaceId, 'max_payment_obligations');
+      res.status(402).json({
+        success: false,
+        data: null,
+        error: `You've reached your plan limit of ${limit === UNLIMITED ? 'unlimited' : limit} tracked items. Upgrade to add more.`,
+      });
+      return;
+    }
+
+    const sub = await subModel.create(workspaceId, req.user!.id, req.body);
     res.status(201).json({ success: true, data: sub, error: null });
   } catch (err) {
     console.error('Create subscription error:', err);

@@ -49,6 +49,13 @@ jest.mock('../../jobs/reminder.job', () => ({
   startReminderJob: jest.fn(),
 }));
 
+// Entitlements: allow by default; the count query still runs against the db mock.
+jest.mock('../../services/entitlements.service', () => ({
+  isWithinLimit: jest.fn().mockResolvedValue(true),
+  getEffectiveLimit: jest.fn().mockResolvedValue(10),
+  UNLIMITED: -1,
+}));
+
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are hoisted
 // ---------------------------------------------------------------------------
@@ -169,7 +176,9 @@ describe('POST /subscriptions', () => {
   };
 
   it('returns 201 with the created subscription given a valid body', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [subRow] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ count: '0' }] })  // limit count check
+      .mockResolvedValueOnce({ rows: [subRow] });          // INSERT
 
     const res = await request(app)
       .post('/subscriptions')
