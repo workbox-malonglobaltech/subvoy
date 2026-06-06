@@ -28,6 +28,16 @@ jest.mock('../../middleware/authenticate', () => ({
   },
 }));
 
+// Resolve the active workspace deterministically — mirror the authenticate mock.
+jest.mock('../../middleware/workspaceContext', () => ({
+  workspaceContext: (req: any, _res: any, next: any) => {
+    req.workspace = { id: 'ws-123', type: 'personal', role: 'owner' };
+    next();
+  },
+  requireCapability: () => (_req: any, _res: any, next: any) => next(),
+  requireRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 jest.mock('../../services/auth.service', () => ({
   hashPassword: jest.fn().mockResolvedValue('$hashed'),
   comparePassword: jest.fn().mockResolvedValue(true),
@@ -51,11 +61,14 @@ import { pool } from '../../db';
 // ---------------------------------------------------------------------------
 
 const USER_ID = 'user-123';
+const WS_ID   = 'ws-123';
 const SUB_ID  = 'sub-123';
 
 const subRow = {
   id: SUB_ID,
+  workspace_id: WS_ID,
   user_id: USER_ID,
+  kind: 'payment',
   name: 'Netflix',
   amount: '15.99',
   currency: 'USD',

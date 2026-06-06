@@ -22,8 +22,8 @@ const query = (pool as unknown as { query: jest.Mock }).query;
 const charge = chargeSubscription as jest.Mock;
 
 const dueRows = [
-  { id: 'sub-1', user_id: 'user-1', name: 'Netflix' },
-  { id: 'sub-2', user_id: 'user-2', name: 'Spotify' },
+  { id: 'sub-1', workspace_id: 'ws-1', user_id: 'user-1', name: 'Netflix' },
+  { id: 'sub-2', workspace_id: 'ws-2', user_id: 'user-2', name: 'Spotify' },
 ];
 
 beforeEach(() => {
@@ -40,7 +40,7 @@ describe('runAutopayScan', () => {
     const summary = await runAutopayScan();
 
     expect(charge).toHaveBeenCalledTimes(2);
-    expect(charge).toHaveBeenCalledWith('user-1', 'sub-1', { source: 'autopay' });
+    expect(charge).toHaveBeenCalledWith('ws-1', 'sub-1', { source: 'autopay' });
     expect(summary).toEqual({ due: 2, charged: 2, insufficient: 0, skipped: 0 });
   });
 

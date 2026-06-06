@@ -132,6 +132,10 @@ export interface FxRates {
 
 export interface Subscription {
   id: string;
+  /** Owning workspace (tenant) this subscription belongs to */
+  workspaceId: string;
+  /** Obligation kind — 'payment' for subscriptions */
+  kind: ObligationKind;
   name: string;
   amount: number;
   currency: string;

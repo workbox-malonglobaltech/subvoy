@@ -13,6 +13,15 @@ jest.mock('../../middleware/authenticate', () => ({
   authenticate: (req: any, _res: any, next: any) => { req.user = { id: 'user-123' }; next(); },
 }));
 
+jest.mock('../../middleware/workspaceContext', () => ({
+  workspaceContext: (req: any, _res: any, next: any) => {
+    req.workspace = { id: 'ws-123', type: 'personal', role: 'owner' };
+    next();
+  },
+  requireCapability: () => (_req: any, _res: any, next: any) => next(),
+  requireRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 jest.mock('../../services/auth.service', () => ({
   verifyToken: jest.fn().mockReturnValue({ userId: 'user-123', tokenVersion: 0 }),
 }));
@@ -42,7 +51,7 @@ describe('POST /subscriptions/:id/pay', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.subscription.id).toBe('sub-1');
     expect(res.body.data.wallet.usdBalance).toBe(84);
-    expect(charge).toHaveBeenCalledWith('user-123', 'sub-1', { source: 'manual' });
+    expect(charge).toHaveBeenCalledWith('ws-123', 'sub-1', { source: 'manual' });
   });
 
   it('returns 402 when the wallet balance is insufficient', async () => {
