@@ -25,6 +25,20 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/workspaces': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/compliance': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        bypass: spaBypass,   // /compliance is also a SPA route
+      },
+      '/plans': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        bypass: spaBypass,   // /plans is also a SPA route
+      },
       '/health': {
         target: 'http://localhost:3001',
         changeOrigin: true,

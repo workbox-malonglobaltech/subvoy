@@ -171,6 +171,18 @@ export interface PlanLimit {
   limitValue: number;
 }
 
+/** A purchasable plan in the catalog. priceMinor in minor units; 0 = free. */
+export interface Plan {
+  key: string;
+  displayName: string;
+  audience: 'personal' | 'business';
+  priceMinor: number;
+  currency: string;
+  interval: 'month' | 'year' | null;
+  features: string[];
+  sortOrder: number;
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeSubscriptions: number;
