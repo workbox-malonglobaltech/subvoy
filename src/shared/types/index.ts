@@ -164,6 +164,13 @@ export interface Announcement {
   createdAt: string;
 }
 
+/** A per-plan entitlement limit. limitValue === -1 means unlimited. */
+export interface PlanLimit {
+  plan: string;
+  limitKey: string;
+  limitValue: number;
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeSubscriptions: number;
