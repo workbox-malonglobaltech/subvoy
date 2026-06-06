@@ -37,6 +37,57 @@ export interface WorkspaceMember {
   createdAt: string;
 }
 
+// ── Compliance obligations (Business workspaces) ────────────────────────────────
+
+export type ComplianceCadence = 'one_off' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type ComplianceStatus = 'open' | 'submitted' | 'completed';
+
+export interface ComplianceItem {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description: string | null;
+  authority: string | null;
+  referenceNumber: string | null;
+  jurisdiction: string | null;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets: number[];
+  status: ComplianceStatus;
+  penaltyNote: string | null;
+  isActive: boolean;
+  /** Derived: due_date < today AND status !== 'completed' */
+  overdue: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateComplianceItemInput {
+  title: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets?: number[];
+  penaltyNote?: string;
+}
+
+export interface UpdateComplianceItemInput {
+  title?: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence?: ComplianceCadence;
+  dueDate?: string;
+  reminderOffsets?: number[];
+  status?: ComplianceStatus;
+  penaltyNote?: string;
+  isActive?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
