@@ -80,3 +80,39 @@ export async function isWithinLimit(workspaceId: string, key: LimitKey, currentC
   if (limit === UNLIMITED) return true;
   return currentCount < limit;
 }
+
+// ── Admin management (super-admin only) ─────────────────────────────────────────
+
+export interface PlanLimit { plan: string; limitKey: string; limitValue: number; }
+
+export async function listPlanLimits(): Promise<PlanLimit[]> {
+  const { rows } = await pool.query<{ plan: string; limit_key: string; limit_value: number }>(
+    `SELECT plan, limit_key, limit_value FROM plan_limits ORDER BY plan, limit_key`
+  );
+  return rows.map(r => ({ plan: r.plan, limitKey: r.limit_key, limitValue: r.limit_value }));
+}
+
+export async function setPlanLimit(plan: string, limitKey: string, limitValue: number): Promise<void> {
+  await pool.query(
+    `INSERT INTO plan_limits (plan, limit_key, limit_value) VALUES ($1, $2, $3)
+     ON CONFLICT (plan, limit_key) DO UPDATE SET limit_value = EXCLUDED.limit_value, updated_at = NOW()`,
+    [plan, limitKey, limitValue]
+  );
+  invalidateLimitsCache();
+}
+
+export async function setWorkspaceOverride(workspaceId: string, limitKey: string, limitValue: number): Promise<void> {
+  await pool.query(
+    `INSERT INTO workspace_limit_overrides (workspace_id, limit_key, limit_value) VALUES ($1, $2, $3)
+     ON CONFLICT (workspace_id, limit_key) DO UPDATE SET limit_value = EXCLUDED.limit_value, updated_at = NOW()`,
+    [workspaceId, limitKey, limitValue]
+  );
+}
+
+export async function clearWorkspaceOverride(workspaceId: string, limitKey: string): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM workspace_limit_overrides WHERE workspace_id = $1 AND limit_key = $2`,
+    [workspaceId, limitKey]
+  );
+  return (rowCount ?? 0) > 0;
+}
