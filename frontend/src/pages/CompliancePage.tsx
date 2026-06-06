@@ -32,12 +32,11 @@ function dueLabel(item: ComplianceItem): { text: string; cls: string } {
 
 export function CompliancePage() {
   const { active } = useWorkspace();
-  const { items, loading, error, add, update, remove, setStatus } = useCompliance();
+  const isBusiness = active?.type === 'business';
+  const { items, loading, error, add, update, remove, setStatus } = useCompliance(isBusiness);
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ComplianceItem | null>(null);
-
-  const isBusiness = active?.type === 'business';
 
   async function handleSave(data: CreateComplianceItemInput) {
     if (editing) {

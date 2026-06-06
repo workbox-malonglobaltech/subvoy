@@ -7,12 +7,17 @@ import {
   ComplianceStatus,
 } from '../../../src/shared/types';
 
-export function useCompliance() {
+/**
+ * @param enabled when false, skips fetching (e.g. in Personal workspaces where
+ *                compliance is unavailable) — avoids a 403 request.
+ */
+export function useCompliance(enabled = true) {
   const [items, setItems] = useState<ComplianceItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!enabled) { setItems([]); setLoading(false); return; }
     try {
       setLoading(true);
       const data = await api.get<ComplianceItem[]>('/compliance');
@@ -23,7 +28,7 @@ export function useCompliance() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
