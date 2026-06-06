@@ -51,20 +51,6 @@ export async function findAllByWorkspace(workspaceId: string): Promise<Subscript
   return rows.map(toSubscription);
 }
 
-/**
- * User-scoped fetch for the personal-scope consumers that have not yet been
- * re-scoped to workspaces (analytics export). Returns the user's active
- * subscriptions across all workspaces they own rows in. Subscriptions are still
- * authored with a user_id, so this remains correct for the personal use case.
- */
-export async function findAllByUser(userId: string): Promise<Subscription[]> {
-  const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE ORDER BY next_billing_date ASC',
-    [userId]
-  );
-  return rows.map(toSubscription);
-}
-
 export async function findById(id: string, workspaceId: string): Promise<Subscription | null> {
   const { rows } = await pool.query<SubscriptionRow>(
     'SELECT * FROM subscriptions WHERE id = $1 AND workspace_id = $2',

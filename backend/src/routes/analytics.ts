@@ -1,16 +1,18 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/authenticate';
+import { workspaceContext } from '../middleware/workspaceContext';
 import { pool } from '../db';
 import * as subModel from '../models/subscription';
 
 const router = Router();
 router.use(authenticate);
+router.use(workspaceContext); // analytics is scoped to the active workspace
 
 // GET /analytics/monthly — 12-month spend breakdown
 // Always returns 12 data points using generate_series, filling gaps with 0
 router.get('/monthly', async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const workspaceId = req.workspace!.id;
 
     const { rows } = await pool.query<{ month: string; total: string }>(
       `SELECT
@@ -28,12 +30,12 @@ router.get('/monthly', async (req: Request, res: Response) => {
          INTERVAL '1 month'
        ) AS m(month)
        LEFT JOIN subscriptions s
-         ON s.user_id = $1
+         ON s.workspace_id = $1
          AND s.is_active = TRUE
          AND DATE_TRUNC('month', s.created_at) <= m.month
        GROUP BY m.month
        ORDER BY m.month ASC`,
-      [userId]
+      [workspaceId]
     );
 
     const months = rows.map(r => ({ month: r.month, total: parseFloat(r.total) }));
@@ -47,7 +49,7 @@ router.get('/monthly', async (req: Request, res: Response) => {
 // GET /analytics/export — download subscriptions as CSV
 router.get('/export', async (req: Request, res: Response) => {
   try {
-    const subs = await subModel.findAllByUser(req.user!.id);
+    const subs = await subModel.findAllByWorkspace(req.workspace!.id);
 
     const header = ['Name', 'Amount', 'Currency', 'Billing Cycle', 'Next Billing Date', 'Category', 'Notes', 'Active'];
     const rows = subs.map(s => [
