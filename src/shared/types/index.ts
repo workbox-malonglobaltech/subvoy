@@ -37,6 +37,15 @@ export interface WorkspaceMember {
   createdAt: string;
 }
 
+/** A workspace member joined with the user's identity, for team management UIs. */
+export interface WorkspaceMemberDetail {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
 // ── Compliance obligations (Business workspaces) ────────────────────────────────
 
 export type ComplianceCadence = 'one_off' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
