@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { authenticate } from '../middleware/authenticate';
+import { workspaceContext } from '../middleware/workspaceContext';
 import { parseCSV } from '../services/csv-parser.service';
 import { detectRecurring } from '../services/detection.service';
 import * as detectedModel from '../models/detected-subscription';
@@ -8,6 +9,7 @@ import * as subModel from '../models/subscription';
 
 const router = Router();
 router.use(authenticate);
+router.use(workspaceContext); // imports land in the active workspace
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -46,7 +48,7 @@ router.post('/csv', upload.single('file'), async (req: Request, res: Response) =
       return;
     }
 
-    const saved = await detectedModel.createMany(req.user!.id, detected);
+    const saved = await detectedModel.createMany(req.workspace!.id, req.user!.id, detected);
     res.status(200).json({
       success: true,
       data: { detected: saved, transactionCount: transactions.length },
@@ -67,7 +69,7 @@ router.post('/csv', upload.single('file'), async (req: Request, res: Response) =
 // GET /imports/detected — get pending detected subs
 router.get('/detected', async (req: Request, res: Response) => {
   try {
-    const items = await detectedModel.findPendingByUser(req.user!.id);
+    const items = await detectedModel.findPendingByWorkspace(req.workspace!.id);
     res.status(200).json({ success: true, data: items, error: null });
   } catch (err) {
     console.error('Get detected error:', err);
@@ -78,14 +80,14 @@ router.get('/detected', async (req: Request, res: Response) => {
 // POST /imports/detected/:id/confirm — add to real subscriptions
 router.post('/detected/:id/confirm', async (req: Request, res: Response) => {
   try {
-    const detected = await detectedModel.confirm(req.params.id, req.user!.id);
+    const detected = await detectedModel.confirm(req.params.id, req.workspace!.id);
     if (!detected) {
       res.status(404).json({ success: false, data: null, error: 'Not found' });
       return;
     }
 
-    // Add to real subscriptions
-    const sub = await subModel.createForUser(req.user!.id, {
+    // Add to real subscriptions in the active workspace
+    const sub = await subModel.create(req.workspace!.id, req.user!.id, {
       name: detected.name,
       amount: detected.amount,
       currency: detected.currency,
@@ -104,7 +106,7 @@ router.post('/detected/:id/confirm', async (req: Request, res: Response) => {
 // POST /imports/detected/:id/dismiss
 router.post('/detected/:id/dismiss', async (req: Request, res: Response) => {
   try {
-    const ok = await detectedModel.dismiss(req.params.id, req.user!.id);
+    const ok = await detectedModel.dismiss(req.params.id, req.workspace!.id);
     if (!ok) {
       res.status(404).json({ success: false, data: null, error: 'Not found' });
       return;
