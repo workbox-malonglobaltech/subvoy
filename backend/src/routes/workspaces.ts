@@ -6,6 +6,20 @@ import { allowsTeams } from '../lib/capabilities';
 import * as workspaceModel from '../models/workspace.model';
 import * as inviteModel from '../models/workspace-invite.model';
 import { sendWorkspaceInviteEmail } from '../services/email.service';
+import { isWithinLimit, getEffectiveLimit, UNLIMITED } from '../services/entitlements.service';
+
+/** Seats used = current members + pending invites. */
+async function seatsUsed(workspaceId: string): Promise<number> {
+  const [members, invites] = await Promise.all([
+    workspaceModel.countMembers(workspaceId),
+    inviteModel.listPending(workspaceId),
+  ]);
+  return members + invites.length;
+}
+
+function seatLimitError(limit: number): string {
+  return `You've reached your plan limit of ${limit === UNLIMITED ? 'unlimited' : limit} members. Upgrade to add more.`;
+}
 
 const router = Router();
 
@@ -195,6 +209,14 @@ router.post('/:id/invites', validate(inviteSchema), async (req: Request, res: Re
       res.status(403).json({ success: false, data: null, error: 'Only owners and admins can invite' });
       return;
     }
+
+    // Plan cap on team size (members + pending invites), admin-tunable.
+    if (!(await isWithinLimit(req.params.id, 'max_members', await seatsUsed(req.params.id)))) {
+      const limit = await getEffectiveLimit(req.params.id, 'max_members');
+      res.status(402).json({ success: false, data: null, error: seatLimitError(limit) });
+      return;
+    }
+
     const { email, role: newRole } = req.body as z.infer<typeof inviteSchema>;
 
     const { invite, token } = await inviteModel.createInvite(req.params.id, email, newRole, req.user!.id);
