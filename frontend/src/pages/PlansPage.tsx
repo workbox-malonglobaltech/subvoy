@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { NavBar } from '../components/NavBar';
 import { usePlans } from '../hooks/usePlans';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
+import { api } from '../lib/api';
 import type { Plan } from '../../../src/shared/types';
 
 function priceLabel(p: Plan): string {
@@ -17,8 +19,21 @@ export function PlansPage() {
   const audience = active?.type === 'business' ? 'business' : 'personal';
   const { plans, loading, error } = usePlans(audience);
   const toast = useToast();
+  const [upgrading, setUpgrading] = useState<string | null>(null);
 
   const currentPlan = active?.plan ?? 'free';
+
+  async function upgrade(plan: Plan) {
+    setUpgrading(plan.key);
+    try {
+      const { url } = await api.post<{ url: string }>('/billing/checkout', { planKey: plan.key });
+      window.location.href = url; // hosted provider checkout
+    } catch (err) {
+      // 503 (billing not configured) surfaces as a friendly message here.
+      toast.info(err instanceof Error ? err.message : 'Could not start checkout');
+      setUpgrading(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -67,17 +82,17 @@ export function PlansPage() {
                   </ul>
 
                   <button
-                    disabled={isCurrent}
-                    onClick={() => toast.info('Self-serve billing is coming soon. Contact us to change your plan.')}
+                    disabled={isCurrent || upgrading !== null || !isPaid}
+                    onClick={() => isPaid && upgrade(p)}
                     className={`mt-5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                       isCurrent
                         ? 'bg-gray-100 text-gray-400 cursor-default'
                         : isPaid
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
+                          : 'border border-gray-300 text-gray-400 cursor-default'
                     }`}
                   >
-                    {isCurrent ? 'Current plan' : isPaid ? `Upgrade to ${p.displayName}` : 'Downgrade'}
+                    {isCurrent ? 'Current plan' : isPaid ? (upgrading === p.key ? 'Starting…' : `Upgrade to ${p.displayName}`) : 'Free'}
                   </button>
                 </div>
               );

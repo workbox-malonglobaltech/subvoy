@@ -15,6 +15,8 @@ import workspacesRouter from './routes/workspaces';
 import complianceRouter from './routes/compliance';
 import plansRouter from './routes/plans';
 import invitesRouter from './routes/invites';
+import billingRouter from './routes/billing';
+import billingWebhookRouter from './routes/billing-webhook';
 import notificationsRouter from './routes/notifications';
 import importsRouter from './routes/imports';
 import analyticsRouter from './routes/analytics';
@@ -44,6 +46,7 @@ app.use(cors({
 // ── Webhook routes must receive the RAW body for signature verification ───────
 // Mount BEFORE express.json() so the Buffer is preserved.
 app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter);
+app.use('/billing/webhook', express.raw({ type: 'application/json' }), billingWebhookRouter);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -88,6 +91,7 @@ app.use('/workspaces', workspacesRouter);
 app.use('/compliance', complianceRouter);
 app.use('/plans', plansRouter);
 app.use('/invites', invitesRouter);
+app.use('/billing', billingRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/imports', importLimiter, importsRouter);
 app.use('/analytics', analyticsRouter);

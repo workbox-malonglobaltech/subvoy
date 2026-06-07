@@ -80,6 +80,14 @@ export async function createBusinessWorkspace(
   return toWorkspace(ws);
 }
 
+/** Sets the workspace's plan (entitlements source of truth). */
+export async function setPlan(workspaceId: string, plan: string): Promise<void> {
+  await pool.query(
+    `UPDATE workspaces SET plan = $1, updated_at = NOW() WHERE id = $2`,
+    [plan, workspaceId]
+  );
+}
+
 export async function findById(id: string): Promise<Workspace | null> {
   const { rows } = await pool.query<WorkspaceRow>(`SELECT * FROM workspaces WHERE id = $1`, [id]);
   return rows[0] ? toWorkspace(rows[0]) : null;
