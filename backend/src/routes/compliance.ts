@@ -4,6 +4,7 @@ import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { workspaceContext, requireCapability } from '../middleware/workspaceContext';
 import * as complianceModel from '../models/compliance.model';
+import * as workspaceModel from '../models/workspace.model';
 
 const router = Router();
 
@@ -26,7 +27,14 @@ const createSchema = z.object({
   dueDate: z.string().regex(dateRegex, 'Date must be YYYY-MM-DD'),
   reminderOffsets: offsets.optional(),
   penaltyNote: z.string().max(1000).optional(),
+  assigneeUserId: z.string().uuid().nullable().optional(),
 });
+
+/** Returns true if assigneeUserId is unset/null or a member of the workspace. */
+async function assigneeIsValid(workspaceId: string, assigneeUserId: string | null | undefined): Promise<boolean> {
+  if (!assigneeUserId) return true;
+  return (await workspaceModel.getMemberRole(workspaceId, assigneeUserId)) !== null;
+}
 
 const updateSchema = createSchema.partial().extend({
   status: z.enum(['open', 'submitted', 'completed']).optional(),
@@ -46,6 +54,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', validate(createSchema), async (req: Request, res: Response) => {
   try {
+    if (!(await assigneeIsValid(req.workspace!.id, req.body.assigneeUserId))) {
+      res.status(400).json({ success: false, data: null, error: 'Assignee must be a workspace member' });
+      return;
+    }
     const item = await complianceModel.create(req.workspace!.id, req.user!.id, req.body);
     res.status(201).json({ success: true, data: item, error: null });
   } catch (err) {
@@ -56,6 +68,10 @@ router.post('/', validate(createSchema), async (req: Request, res: Response) => 
 
 router.put('/:id', validate(updateSchema), async (req: Request, res: Response) => {
   try {
+    if (!(await assigneeIsValid(req.workspace!.id, req.body.assigneeUserId))) {
+      res.status(400).json({ success: false, data: null, error: 'Assignee must be a workspace member' });
+      return;
+    }
     const item = await complianceModel.update(req.params.id, req.workspace!.id, req.body);
     if (!item) {
       res.status(404).json({ success: false, data: null, error: 'Compliance item not found' });

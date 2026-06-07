@@ -65,6 +65,8 @@ export interface ComplianceItem {
   status: ComplianceStatus;
   penaltyNote: string | null;
   isActive: boolean;
+  /** Workspace member responsible for this obligation; reminders target them */
+  assigneeUserId: string | null;
   /** Derived: due_date < today AND status !== 'completed' */
   overdue: boolean;
   createdAt: string;
@@ -81,6 +83,7 @@ export interface CreateComplianceItemInput {
   dueDate: string;
   reminderOffsets?: number[];
   penaltyNote?: string;
+  assigneeUserId?: string | null;
 }
 
 export interface UpdateComplianceItemInput {
@@ -95,6 +98,7 @@ export interface UpdateComplianceItemInput {
   status?: ComplianceStatus;
   penaltyNote?: string;
   isActive?: boolean;
+  assigneeUserId?: string | null;
 }
 
 export interface User {

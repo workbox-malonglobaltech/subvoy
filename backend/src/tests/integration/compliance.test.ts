@@ -37,8 +37,13 @@ jest.mock('../../models/compliance.model', () => ({
   softDelete: jest.fn(),
 }));
 
+jest.mock('../../models/workspace.model', () => ({
+  getMemberRole: jest.fn(),
+}));
+
 import app from '../../index';
 import * as complianceModel from '../../models/compliance.model';
+import * as workspaceModel from '../../models/workspace.model';
 
 const item = {
   id: 'c-1', workspaceId: 'ws-biz', title: 'CAC Annual Return', description: null,
@@ -74,6 +79,28 @@ describe('compliance CRUD (business workspace)', () => {
   it('POST /compliance rejects an invalid cadence with 400', async () => {
     const res = await request(app).post('/compliance').send({ title: 'X', cadence: 'daily', dueDate: '2026-12-31' });
     expect(res.status).toBe(400);
+  });
+
+  it('assigns to a workspace member', async () => {
+    (workspaceModel.getMemberRole as jest.Mock).mockResolvedValue('member');
+    (complianceModel.create as jest.Mock).mockResolvedValue({ ...item, assigneeUserId: 'u2' });
+    const res = await request(app).post('/compliance').send({
+      title: 'CAC Annual Return', cadence: 'yearly', dueDate: '2026-12-31',
+      assigneeUserId: '550e8400-e29b-41d4-a716-446655440000',
+    });
+    expect(res.status).toBe(201);
+    expect(workspaceModel.getMemberRole).toHaveBeenCalled();
+  });
+
+  it('rejects an assignee who is not a workspace member with 400', async () => {
+    (workspaceModel.getMemberRole as jest.Mock).mockResolvedValue(null);
+    const res = await request(app).post('/compliance').send({
+      title: 'X', cadence: 'yearly', dueDate: '2026-12-31',
+      assigneeUserId: '550e8400-e29b-41d4-a716-446655440000',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/workspace member/i);
+    expect(complianceModel.create).not.toHaveBeenCalled();
   });
 
   it('PUT /compliance/:id updates status', async () => {
