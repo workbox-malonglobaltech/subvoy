@@ -27,6 +27,7 @@ export interface AutopayScanSummary {
 
 interface DueRow {
   id: string;
+  workspace_id: string;
   user_id: string;
   name: string;
 }
@@ -62,7 +63,7 @@ export async function runAutopayScan(): Promise<AutopayScanSummary> {
   console.log('[Autopay] Scan started at', new Date().toISOString());
 
   const { rows } = await pool.query<DueRow>(
-    `SELECT id, user_id, name
+    `SELECT id, workspace_id, user_id, name
      FROM subscriptions
      WHERE autopay = TRUE
        AND is_active = TRUE
@@ -74,7 +75,7 @@ export async function runAutopayScan(): Promise<AutopayScanSummary> {
 
   for (const row of rows) {
     try {
-      const result = await chargeSubscription(row.user_id, row.id, { source: 'autopay' });
+      const result = await chargeSubscription(row.workspace_id, row.id, { source: 'autopay' });
       switch (result.code) {
         case 'paid':
           summary.charged++;

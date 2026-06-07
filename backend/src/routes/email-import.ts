@@ -8,6 +8,7 @@ import { fetchImapReceipts } from '../services/imap.service';
 import { parseReceiptEmails } from '../services/email-parser.service';
 import { detectRecurring } from '../services/detection.service';
 import * as detectedModel from '../models/detected-subscription';
+import * as workspaceModel from '../models/workspace.model';
 
 const router = Router();
 
@@ -163,8 +164,10 @@ router.post('/scan', authenticate, async (req: Request, res: Response) => {
       return;
     }
 
-    // Save to detected_subscriptions (same table used by CSV import)
-    const saved = await detectedModel.createMany(userId, detected);
+    // Save to detected_subscriptions (same table as CSV import). Email scans run
+    // without an active-workspace header, so they land in the user's Personal workspace.
+    const ws = await workspaceModel.ensurePersonalWorkspace(userId);
+    const saved = await detectedModel.createMany(ws.id, userId, detected);
 
     res.status(200).json({
       success: true,
@@ -217,7 +220,8 @@ router.post('/imap/scan', authenticate, async (req: Request, res: Response) => {
       return;
     }
 
-    const saved = await detectedModel.createMany(req.user!.id, detected);
+    const ws = await workspaceModel.ensurePersonalWorkspace(req.user!.id);
+    const saved = await detectedModel.createMany(ws.id, req.user!.id, detected);
     res.status(200).json({
       success: true,
       data: { detected: saved, emailCount: emails.length },

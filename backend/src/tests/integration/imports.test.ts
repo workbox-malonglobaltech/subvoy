@@ -27,6 +27,16 @@ jest.mock('../../middleware/authenticate', () => ({
   },
 }));
 
+// Imports are workspace-scoped — resolve the active workspace deterministically.
+jest.mock('../../middleware/workspaceContext', () => ({
+  workspaceContext: (req: any, _res: any, next: any) => {
+    req.workspace = { id: 'wwwwwwww-0000-0000-0000-000000000009', type: 'personal', role: 'owner' };
+    next();
+  },
+  requireCapability: () => (_req: any, _res: any, next: any) => next(),
+  requireRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 jest.mock('../../services/auth.service', () => ({
   verifyToken: jest.fn().mockReturnValue({ userId: 'aaaaaaaa-0000-0000-0000-000000000001', tokenVersion: 0 }),
   hashPassword: jest.fn(),
@@ -63,6 +73,7 @@ import app from '../../index';
 // ---------------------------------------------------------------------------
 
 const USER_ID   = 'aaaaaaaa-0000-0000-0000-000000000001';
+const WS_ID     = 'wwwwwwww-0000-0000-0000-000000000009';
 const DETECT_ID = 'bbbbbbbb-0000-0000-0000-000000000002';
 const SUB_ID    = 'cccccccc-0000-0000-0000-000000000003';
 
@@ -93,6 +104,7 @@ const NO_RECURRING_CSV = [
 // Fixture rows
 const detectedRow = {
   id: DETECT_ID,
+  workspace_id: WS_ID,
   user_id: USER_ID,
   name: 'Netflix',
   amount: '15.99',
@@ -110,7 +122,9 @@ const confirmedRow = { ...detectedRow, status: 'confirmed' };
 
 const subscriptionRow = {
   id: SUB_ID,
+  workspace_id: WS_ID,
   user_id: USER_ID,
+  kind: 'payment',
   name: 'Netflix',
   amount: '15.99',
   currency: 'USD',
@@ -209,15 +223,15 @@ describe('POST /imports/csv', () => {
     expect(res.body.data.transactionCount).toBe(3);
     expect(res.body.error).toBeNull();
 
-    // Verify the DELETE used a parameterized query with userId
+    // Verify the DELETE used a parameterized query scoped by workspace
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('DELETE FROM detected_subscriptions'),
-      [USER_ID]
+      [WS_ID]
     );
-    // Verify the INSERT used parameterized query
+    // Verify the INSERT used parameterized query (workspace + user)
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO detected_subscriptions'),
-      expect.arrayContaining([USER_ID, 'Netflix'])
+      expect.arrayContaining([WS_ID, USER_ID, 'Netflix'])
     );
   });
 
@@ -266,7 +280,7 @@ describe('GET /imports/detected', () => {
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining("status = 'pending'"),
-      [USER_ID]
+      [WS_ID]
     );
   });
 
@@ -333,15 +347,15 @@ describe('POST /imports/detected/:id/confirm', () => {
     expect(res.body.data.billingCycle).toBe('monthly');
     expect(res.body.error).toBeNull();
 
-    // Verify the UPDATE used parameterized query with both id and userId
+    // Verify the UPDATE used parameterized query scoped by workspace
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining("status = 'confirmed'"),
-      [DETECT_ID, USER_ID]
+      [DETECT_ID, WS_ID]
     );
-    // Verify subscription INSERT used parameterized query
+    // Verify subscription INSERT used parameterized query (workspace + user)
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO subscriptions'),
-      expect.arrayContaining([USER_ID, 'Netflix'])
+      expect.arrayContaining([WS_ID, USER_ID, 'Netflix'])
     );
   });
 
@@ -396,7 +410,7 @@ describe('POST /imports/detected/:id/dismiss', () => {
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining("status = 'dismissed'"),
-      [DETECT_ID, USER_ID]
+      [DETECT_ID, WS_ID]
     );
   });
 

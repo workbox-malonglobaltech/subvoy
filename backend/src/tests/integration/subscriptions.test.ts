@@ -28,6 +28,16 @@ jest.mock('../../middleware/authenticate', () => ({
   },
 }));
 
+// Resolve the active workspace deterministically — mirror the authenticate mock.
+jest.mock('../../middleware/workspaceContext', () => ({
+  workspaceContext: (req: any, _res: any, next: any) => {
+    req.workspace = { id: 'ws-123', type: 'personal', role: 'owner' };
+    next();
+  },
+  requireCapability: () => (_req: any, _res: any, next: any) => next(),
+  requireRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 jest.mock('../../services/auth.service', () => ({
   hashPassword: jest.fn().mockResolvedValue('$hashed'),
   comparePassword: jest.fn().mockResolvedValue(true),
@@ -37,6 +47,13 @@ jest.mock('../../services/auth.service', () => ({
 
 jest.mock('../../jobs/reminder.job', () => ({
   startReminderJob: jest.fn(),
+}));
+
+// Entitlements: allow by default; the count query still runs against the db mock.
+jest.mock('../../services/entitlements.service', () => ({
+  isWithinLimit: jest.fn().mockResolvedValue(true),
+  getEffectiveLimit: jest.fn().mockResolvedValue(10),
+  UNLIMITED: -1,
 }));
 
 // ---------------------------------------------------------------------------
@@ -51,11 +68,14 @@ import { pool } from '../../db';
 // ---------------------------------------------------------------------------
 
 const USER_ID = 'user-123';
+const WS_ID   = 'ws-123';
 const SUB_ID  = 'sub-123';
 
 const subRow = {
   id: SUB_ID,
+  workspace_id: WS_ID,
   user_id: USER_ID,
+  kind: 'payment',
   name: 'Netflix',
   amount: '15.99',
   currency: 'USD',
@@ -156,7 +176,9 @@ describe('POST /subscriptions', () => {
   };
 
   it('returns 201 with the created subscription given a valid body', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [subRow] });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ count: '0' }] })  // limit count check
+      .mockResolvedValueOnce({ rows: [subRow] });          // INSERT
 
     const res = await request(app)
       .post('/subscriptions')

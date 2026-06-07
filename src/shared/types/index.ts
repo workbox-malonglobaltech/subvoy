@@ -8,6 +8,121 @@ export interface ApiResponse<T = unknown> {
 
 export type UserRole = 'user' | 'staff' | 'superadmin';
 
+// ── Workspaces (multi-tenancy) ──────────────────────────────────────────────────
+
+export type WorkspaceType = 'personal' | 'business';
+export type WorkspaceRole = 'owner' | 'admin' | 'member';
+
+/** Obligation kinds a workspace type may contain. */
+export type ObligationKind = 'payment' | 'compliance';
+
+export interface Workspace {
+  id: string;
+  type: WorkspaceType;
+  name: string;
+  /** Current user's role in this workspace (when returned in a membership list) */
+  role?: WorkspaceRole;
+  /** ISO 3166-1 alpha-2 operating country (business), or null */
+  country: string | null;
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
+/** A workspace member joined with the user's identity, for team management UIs. */
+export interface WorkspaceMemberDetail {
+  userId: string;
+  email: string;
+  name: string | null;
+  role: WorkspaceRole;
+  createdAt: string;
+}
+
+export type InviteStatus = 'pending' | 'accepted' | 'revoked';
+
+/** A pending workspace invitation (admin view). */
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: WorkspaceRole;
+  status: InviteStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** Public view of an invite, returned to the accept page by token. */
+export interface InviteInfo {
+  workspaceName: string;
+  email: string;
+  role: WorkspaceRole;
+  /** pending + not expired */
+  valid: boolean;
+}
+
+// ── Compliance obligations (Business workspaces) ────────────────────────────────
+
+export type ComplianceCadence = 'one_off' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type ComplianceStatus = 'open' | 'submitted' | 'completed';
+
+export interface ComplianceItem {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description: string | null;
+  authority: string | null;
+  referenceNumber: string | null;
+  jurisdiction: string | null;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets: number[];
+  status: ComplianceStatus;
+  penaltyNote: string | null;
+  isActive: boolean;
+  /** Workspace member responsible for this obligation; reminders target them */
+  assigneeUserId: string | null;
+  /** Derived: due_date < today AND status !== 'completed' */
+  overdue: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateComplianceItemInput {
+  title: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence: ComplianceCadence;
+  dueDate: string;
+  reminderOffsets?: number[];
+  penaltyNote?: string;
+  assigneeUserId?: string | null;
+}
+
+export interface UpdateComplianceItemInput {
+  title?: string;
+  description?: string;
+  authority?: string;
+  referenceNumber?: string;
+  jurisdiction?: string;
+  cadence?: ComplianceCadence;
+  dueDate?: string;
+  reminderOffsets?: number[];
+  status?: ComplianceStatus;
+  penaltyNote?: string;
+  isActive?: boolean;
+  assigneeUserId?: string | null;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -75,6 +190,25 @@ export interface Announcement {
   createdAt: string;
 }
 
+/** A per-plan entitlement limit. limitValue === -1 means unlimited. */
+export interface PlanLimit {
+  plan: string;
+  limitKey: string;
+  limitValue: number;
+}
+
+/** A purchasable plan in the catalog. priceMinor in minor units; 0 = free. */
+export interface Plan {
+  key: string;
+  displayName: string;
+  audience: 'personal' | 'business';
+  priceMinor: number;
+  currency: string;
+  interval: 'month' | 'year' | null;
+  features: string[];
+  sortOrder: number;
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeSubscriptions: number;
@@ -103,6 +237,10 @@ export interface FxRates {
 
 export interface Subscription {
   id: string;
+  /** Owning workspace (tenant) this subscription belongs to */
+  workspaceId: string;
+  /** Obligation kind — 'payment' for subscriptions */
+  kind: ObligationKind;
   name: string;
   amount: number;
   currency: string;
@@ -147,7 +285,7 @@ export interface UpdateSubscriptionInput {
   autopayMaxAmount?: number | null;
 }
 
-export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert';
+export type NotificationType = 'payment_reminder' | 'price_change' | 'budget_alert' | 'compliance_reminder';
 
 export interface AppNotification {
   id: string;

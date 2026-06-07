@@ -1,6 +1,8 @@
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { useSummary } from '../hooks/useSummary';
+import { useCompliance } from '../hooks/useCompliance';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NavBar } from '../components/NavBar';
 import { MonthlyChart } from '../components/MonthlyChart';
 import { CalendarView } from '../components/CalendarView';
@@ -23,6 +25,9 @@ export function AnalyticsPage() {
   const { data, loading, error } = useAnalytics();
   const { subscriptions } = useSubscriptions();
   const { summary } = useSummary([subscriptions.length]);
+  const { active } = useWorkspace();
+  const isBusiness = active?.type === 'business';
+  const { items: complianceItems } = useCompliance(isBusiness);
 
   const currentYear = new Date().getFullYear().toString();
   const ytdSpend = data
@@ -145,9 +150,13 @@ export function AnalyticsPage() {
 
         {/* Calendar view */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-700 mb-1">Upcoming Payments</h2>
-          <p className="text-xs text-gray-400 mb-5">Based on next billing dates</p>
-          <CalendarView subscriptions={subscriptions} />
+          <h2 className="text-sm font-semibold text-gray-700 mb-1">
+            {isBusiness ? 'Upcoming Deadlines' : 'Upcoming Payments'}
+          </h2>
+          <p className="text-xs text-gray-400 mb-5">
+            {isBusiness ? 'Payments and compliance, by due date' : 'Based on next billing dates'}
+          </p>
+          <CalendarView subscriptions={subscriptions} complianceItems={complianceItems} />
         </div>
       </main>
     </div>
