@@ -39,6 +39,15 @@ export default defineConfig({
         changeOrigin: true,
         bypass: spaBypass,   // /plans is also a SPA route
       },
+      '/invites': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/billing': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        bypass: spaBypass,   // /billing/callback is a SPA route
+      },
       '/health': {
         target: 'http://localhost:3001',
         changeOrigin: true,
