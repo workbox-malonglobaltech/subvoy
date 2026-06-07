@@ -354,6 +354,37 @@ export async function sendReminderEmail(data: {
   });
 }
 
+// ── Workspace invite ──────────────────────────────────────────────────────────
+
+export async function sendWorkspaceInviteEmail(data: {
+  toEmail: string;
+  workspaceName: string;
+  role: string;
+  acceptUrl: string;
+}): Promise<void> {
+  const content = `
+    ${para(`You've been invited to join <strong>${esc(data.workspaceName)}</strong> on Subvoy as <strong>${esc(data.role)}</strong>.`)}
+    ${para('Subvoy helps teams track subscriptions and compliance deadlines in one place.', true)}
+    ${ctaButton('Accept invitation →', data.acceptUrl)}
+    ${infoCard(`
+      <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.6">
+        New to Subvoy? You'll be able to create your account when you accept.<br/>
+        This invitation expires in <strong>14 days</strong>.
+      </p>
+    `)}
+  `;
+
+  await send({
+    to:      data.toEmail,
+    subject: `You're invited to join ${data.workspaceName} on Subvoy`,
+    html:    layout({
+      previewText: `Join ${data.workspaceName} on Subvoy`,
+      headerLabel: 'Team invitation',
+      content,
+    }),
+  });
+}
+
 // ── Compliance reminder ───────────────────────────────────────────────────────
 
 export async function sendComplianceReminderEmail(data: {

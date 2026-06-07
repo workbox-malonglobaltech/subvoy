@@ -46,6 +46,28 @@ export interface WorkspaceMemberDetail {
   createdAt: string;
 }
 
+export type InviteStatus = 'pending' | 'accepted' | 'revoked';
+
+/** A pending workspace invitation (admin view). */
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: WorkspaceRole;
+  status: InviteStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** Public view of an invite, returned to the accept page by token. */
+export interface InviteInfo {
+  workspaceName: string;
+  email: string;
+  role: WorkspaceRole;
+  /** pending + not expired */
+  valid: boolean;
+}
+
 // ── Compliance obligations (Business workspaces) ────────────────────────────────
 
 export type ComplianceCadence = 'one_off' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
