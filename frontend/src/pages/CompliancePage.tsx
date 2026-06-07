@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavBar } from '../components/NavBar';
 import { ComplianceModal } from '../components/ComplianceModal';
 import { useCompliance } from '../hooks/useCompliance';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
+import { api } from '../lib/api';
 import {
   ComplianceItem,
   CreateComplianceItemInput,
   ComplianceStatus,
+  WorkspaceMemberDetail,
 } from '../../../src/shared/types';
 
 const STATUS_PILL: Record<ComplianceStatus, string> = {
@@ -37,6 +39,14 @@ export function CompliancePage() {
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ComplianceItem | null>(null);
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isBusiness || !active?.id) return;
+    api.get<WorkspaceMemberDetail[]>(`/workspaces/${active.id}/members`)
+      .then(ms => setMemberNames(Object.fromEntries(ms.map(m => [m.userId, m.name ?? m.email]))))
+      .catch(() => {});
+  }, [isBusiness, active?.id]);
 
   async function handleSave(data: CreateComplianceItemInput) {
     if (editing) {
@@ -132,6 +142,9 @@ export function CompliancePage() {
                         {item.referenceNumber && <span>· {item.referenceNumber}</span>}
                         <span>· {item.cadence.replace('_', '-')}</span>
                         <span className={`font-medium ${due.cls}`}>· {due.text}</span>
+                        {item.assigneeUserId && memberNames[item.assigneeUserId] && (
+                          <span>· 👤 {memberNames[item.assigneeUserId]}</span>
+                        )}
                       </div>
                       {item.penaltyNote && (
                         <p className="text-xs text-red-500 mt-1">Late penalty: {item.penaltyNote}</p>

@@ -20,6 +20,7 @@ interface ComplianceRow {
   status: ComplianceItem['status'];
   penalty_note: string | null;
   is_active: boolean;
+  assignee_user_id: string | null;
   overdue: boolean;
   created_at: Date;
   updated_at: Date;
@@ -43,6 +44,7 @@ function toItem(row: ComplianceRow): ComplianceItem {
     status: row.status,
     penaltyNote: row.penalty_note,
     isActive: row.is_active,
+    assigneeUserId: row.assignee_user_id,
     overdue: row.overdue,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
@@ -75,8 +77,8 @@ export async function create(
   const { rows } = await pool.query<ComplianceRow>(
     `INSERT INTO compliance_items
        (workspace_id, user_id, title, description, authority, reference_number, jurisdiction,
-        cadence, due_date, reminder_offsets, penalty_note)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, '{30,7,1}'), $11)
+        cadence, due_date, reminder_offsets, penalty_note, assignee_user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, '{30,7,1}'), $11, $12)
      RETURNING *, ${OVERDUE_EXPR}`,
     [
       workspaceId,
@@ -90,6 +92,7 @@ export async function create(
       data.dueDate,
       data.reminderOffsets ?? null,
       data.penaltyNote ?? null,
+      data.assigneeUserId ?? null,
     ]
   );
   return toItem(rows[0]);
@@ -117,6 +120,7 @@ export async function update(
   if (data.status !== undefined) set('status', data.status);
   if (data.penaltyNote !== undefined) set('penalty_note', data.penaltyNote);
   if (data.isActive !== undefined) set('is_active', data.isActive);
+  if (data.assigneeUserId !== undefined) set('assignee_user_id', data.assigneeUserId);
 
   if (fields.length === 0) return findById(id, workspaceId);
 

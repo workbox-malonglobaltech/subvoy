@@ -35,13 +35,13 @@ export async function runComplianceReminderScan(): Promise<number> {
       c.authority,
       c.due_date,
       (c.due_date - CURRENT_DATE)   AS days_until,
-      c.user_id,
+      COALESCE(c.assignee_user_id, c.user_id) AS user_id,  -- reminder target: assignee, else creator
       u.email                       AS user_email,
       u.name                        AS user_name,
       COALESCE(np.email_enabled, TRUE) AS email_enabled
     FROM compliance_items c
-    JOIN users u ON u.id = c.user_id
-    LEFT JOIN notification_preferences np ON np.user_id = c.user_id
+    JOIN users u ON u.id = COALESCE(c.assignee_user_id, c.user_id)
+    LEFT JOIN notification_preferences np ON np.user_id = COALESCE(c.assignee_user_id, c.user_id)
     WHERE c.is_active = TRUE
       AND c.status <> 'completed'
       AND (

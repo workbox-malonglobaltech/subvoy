@@ -3,7 +3,10 @@ import {
   ComplianceItem,
   CreateComplianceItemInput,
   ComplianceCadence,
+  WorkspaceMemberDetail,
 } from '../../../src/shared/types';
+import { api } from '../lib/api';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 
 interface Props {
   open: boolean;
@@ -28,6 +31,9 @@ function parseOffsets(input: string): number[] {
 }
 
 export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
+  const { active } = useWorkspace();
+  const [members, setMembers] = useState<WorkspaceMemberDetail[]>([]);
+  const [assigneeUserId, setAssigneeUserId] = useState('');
   const [title, setTitle] = useState('');
   const [authority, setAuthority] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -49,13 +55,22 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
       setReminderOffsets(initial.reminderOffsets.join(', '));
       setPenaltyNote(initial.penaltyNote ?? '');
       setDescription(initial.description ?? '');
+      setAssigneeUserId(initial.assigneeUserId ?? '');
     } else {
       setTitle(''); setAuthority(''); setReferenceNumber('');
       setCadence('yearly'); setDueDate(''); setReminderOffsets('30, 7, 1');
-      setPenaltyNote(''); setDescription('');
+      setPenaltyNote(''); setDescription(''); setAssigneeUserId('');
     }
     setError('');
   }, [initial, open]);
+
+  // Load workspace members for the assignee picker when the modal opens.
+  useEffect(() => {
+    if (!open || !active?.id) return;
+    api.get<WorkspaceMemberDetail[]>(`/workspaces/${active.id}/members`)
+      .then(setMembers)
+      .catch(() => setMembers([]));
+  }, [open, active?.id]);
 
   if (!open) return null;
 
@@ -75,6 +90,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
         reminderOffsets: parseOffsets(reminderOffsets),
         penaltyNote: penaltyNote.trim() || undefined,
         description: description.trim() || undefined,
+        assigneeUserId: assigneeUserId || null,
       });
       onClose();
     } catch (err) {
@@ -151,6 +167,25 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
               placeholder="30, 7, 1"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
+
+          {members.length > 0 && (
+            <div>
+              <label htmlFor="c-assignee" className="block text-sm font-medium text-gray-700 mb-1">
+                Assign to <span className="text-gray-400 font-normal">(reminders go to them)</span>
+              </label>
+              <select
+                id="c-assignee"
+                value={assigneeUserId}
+                onChange={e => setAssigneeUserId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">Unassigned (notify creator)</option>
+                {members.map(m => (
+                  <option key={m.userId} value={m.userId}>{m.name ?? m.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label htmlFor="c-penalty" className="block text-sm font-medium text-gray-700 mb-1">
