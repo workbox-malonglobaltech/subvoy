@@ -46,7 +46,8 @@ const updateSchema = createSchema.partial().extend({
 router.get('/', async (req: Request, res: Response) => {
   try {
     const includeInactive = req.query.includeInactive === 'true';
-    const items = await complianceModel.findAllByWorkspace(req.workspace!.id, includeInactive);
+    const page = { limit: Number(req.query.limit) || undefined, offset: Number(req.query.offset) || undefined };
+    const items = await complianceModel.findAllByWorkspace(req.workspace!.id, includeInactive, page);
     res.status(200).json({ success: true, data: items, error: null });
   } catch (err) {
     console.error('Get compliance items error:', err);

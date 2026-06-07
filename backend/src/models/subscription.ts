@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { clampLimit, safeOffset } from '../lib/pagination';
 import { Subscription, CreateSubscriptionInput, UpdateSubscriptionInput } from '../../../src/shared/types';
 
 interface SubscriptionRow {
@@ -43,10 +44,14 @@ function toSubscription(row: SubscriptionRow): Subscription {
   };
 }
 
-export async function findAllByWorkspace(workspaceId: string): Promise<Subscription[]> {
+export async function findAllByWorkspace(
+  workspaceId: string,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE workspace_id = $1 AND is_active = TRUE ORDER BY next_billing_date ASC',
-    [workspaceId]
+    `SELECT * FROM subscriptions WHERE workspace_id = $1 AND is_active = TRUE
+     ORDER BY next_billing_date ASC LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toSubscription);
 }
@@ -125,10 +130,14 @@ export async function update(
   return toSubscription(rows[0]);
 }
 
-export async function findAllByWorkspaceIncludingInactive(workspaceId: string): Promise<Subscription[]> {
+export async function findAllByWorkspaceIncludingInactive(
+  workspaceId: string,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE workspace_id = $1 ORDER BY is_active DESC, next_billing_date ASC',
-    [workspaceId]
+    `SELECT * FROM subscriptions WHERE workspace_id = $1
+     ORDER BY is_active DESC, next_billing_date ASC LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toSubscription);
 }
