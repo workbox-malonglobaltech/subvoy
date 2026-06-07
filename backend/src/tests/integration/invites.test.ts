@@ -23,10 +23,16 @@ jest.mock('../../models/workspace.model', () => ({
   findById: jest.fn(),
   getMemberRole: jest.fn(),
   addMemberByEmail: jest.fn(),
+  countMembers: jest.fn().mockResolvedValue(1),
+}));
+jest.mock('../../services/entitlements.service', () => ({
+  isWithinLimit: jest.fn().mockResolvedValue(true),
+  getEffectiveLimit: jest.fn().mockResolvedValue(10),
+  UNLIMITED: -1,
 }));
 jest.mock('../../models/workspace-invite.model', () => ({
   createInvite: jest.fn(),
-  listPending: jest.fn(),
+  listPending: jest.fn().mockResolvedValue([]),
   revoke: jest.fn(),
   findByToken: jest.fn(),
   markAccepted: jest.fn(),

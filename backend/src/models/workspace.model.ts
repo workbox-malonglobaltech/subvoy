@@ -198,6 +198,14 @@ export async function updateMemberRole(
   return rows[0] ? toMemberDetail(rows[0]) : null;
 }
 
+export async function countMembers(workspaceId: string): Promise<number> {
+  const { rows } = await pool.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM workspace_members WHERE workspace_id = $1`,
+    [workspaceId]
+  );
+  return parseInt(rows[0].count, 10);
+}
+
 export async function removeMember(workspaceId: string, userId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
     `DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2`,

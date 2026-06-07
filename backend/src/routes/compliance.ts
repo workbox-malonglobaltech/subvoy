@@ -5,6 +5,8 @@ import { authenticate } from '../middleware/authenticate';
 import { workspaceContext, requireCapability } from '../middleware/workspaceContext';
 import * as complianceModel from '../models/compliance.model';
 import * as workspaceModel from '../models/workspace.model';
+import { isWithinLimit, getEffectiveLimit, UNLIMITED } from '../services/entitlements.service';
+import { pool } from '../db';
 
 const router = Router();
 
@@ -54,11 +56,27 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', validate(createSchema), async (req: Request, res: Response) => {
   try {
-    if (!(await assigneeIsValid(req.workspace!.id, req.body.assigneeUserId))) {
+    const workspaceId = req.workspace!.id;
+
+    // Plan cap on active compliance obligations (admin-tunable).
+    const { rows: [{ count }] } = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM compliance_items WHERE workspace_id = $1 AND is_active = TRUE`,
+      [workspaceId]
+    );
+    if (!(await isWithinLimit(workspaceId, 'max_compliance_obligations', parseInt(count, 10)))) {
+      const limit = await getEffectiveLimit(workspaceId, 'max_compliance_obligations');
+      res.status(402).json({
+        success: false, data: null,
+        error: `You've reached your plan limit of ${limit === UNLIMITED ? 'unlimited' : limit} compliance items. Upgrade to add more.`,
+      });
+      return;
+    }
+
+    if (!(await assigneeIsValid(workspaceId, req.body.assigneeUserId))) {
       res.status(400).json({ success: false, data: null, error: 'Assignee must be a workspace member' });
       return;
     }
-    const item = await complianceModel.create(req.workspace!.id, req.user!.id, req.body);
+    const item = await complianceModel.create(workspaceId, req.user!.id, req.body);
     res.status(201).json({ success: true, data: item, error: null });
   } catch (err) {
     console.error('Create compliance item error:', err);
