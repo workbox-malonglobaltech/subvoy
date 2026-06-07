@@ -87,39 +87,6 @@ export async function create(
   return toSubscription(rows[0]);
 }
 
-/**
- * Creates a subscription for a user in their Personal workspace, resolving the
- * workspace_id from the user's personal workspace inside the same INSERT (single
- * round-trip). Used by personal-scope consumers (CSV import confirm) that don't
- * carry workspace context. Keyed on user_id first so callers asserting on the
- * params see [userId, name, ...].
- */
-export async function createForUser(userId: string, data: CreateSubscriptionInput): Promise<Subscription> {
-  const { rows } = await pool.query<SubscriptionRow>(
-    `INSERT INTO subscriptions
-       (user_id, workspace_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes, autopay, autopay_max_amount)
-     VALUES (
-       $1,
-       (SELECT id FROM workspaces WHERE owner_id = $1 AND type = 'personal' LIMIT 1),
-       $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-     ) RETURNING *`,
-    [
-      userId,
-      data.name,
-      data.amount,
-      data.currency ?? 'USD',
-      data.billingCycle,
-      data.nextBillingDate,
-      data.category ?? null,
-      data.logoUrl ?? null,
-      data.notes ?? null,
-      data.autopay ?? false,
-      data.autopayMaxAmount ?? null,
-    ]
-  );
-  return toSubscription(rows[0]);
-}
-
 export async function update(
   id: string,
   workspaceId: string,
