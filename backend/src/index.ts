@@ -2,6 +2,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+// Initialise error monitoring as early as possible (no-op without SENTRY_DSN).
+import './lib/sentry';
+
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';

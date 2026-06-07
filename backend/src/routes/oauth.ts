@@ -1,18 +1,16 @@
-import { Router, Request, Response, CookieOptions } from 'express';
+import { Router, Request, Response } from 'express';
 import { google } from 'googleapis';
 import * as userModel from '../models/user';
 import * as workspaceModel from '../models/workspace.model';
 import { signToken } from '../services/auth.service';
+import { authCookieOptions } from '../lib/cookie';
 import { pool } from '../db';
 
 const router = Router();
 
-const COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-};
+// 'strict' previously could drop the cookie across the OAuth redirect chain;
+// the shared helper defaults to 'lax' (correct for OAuth) and is env-tunable.
+const COOKIE_OPTIONS = authCookieOptions();
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
