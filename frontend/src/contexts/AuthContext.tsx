@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { api } from '../lib/api';
+import { api, setUnauthorizedHandler } from '../lib/api';
 import { User } from '../../../src/shared/types';
 
 interface AuthContextValue {
@@ -22,6 +22,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  // On a mid-session 401 (token expired / revoked elsewhere), drop the user and
+  // send them to login instead of leaving a half-broken authenticated UI.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      const p = window.location.pathname;
+      const onPublic = p === '/' || p.startsWith('/login') || p.startsWith('/register') ||
+        p.startsWith('/forgot-password') || p.startsWith('/reset-password') || p.startsWith('/invite');
+      if (!onPublic) window.location.assign('/login?expired=1');
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   async function login(email: string, password: string) {
