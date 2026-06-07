@@ -1,4 +1,4 @@
-import { Router, Request, Response, CookieOptions } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
@@ -6,17 +6,13 @@ import * as userModel from '../models/user';
 import * as workspaceModel from '../models/workspace.model';
 import { hashPassword, comparePassword, signToken } from '../services/auth.service';
 import { sendWelcomeEmail } from '../services/email.service';
+import { authCookieOptions, clearCookieOptions } from '../lib/cookie';
 import { pool } from '../db';
 // Note: findByEmail now returns User (no passwordHash). Use getPasswordHash for login comparison.
 
 const router = Router();
 
-const COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict', // upgraded from 'lax' — stronger CSRF protection
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-};
+const COOKIE_OPTIONS = authCookieOptions();
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -105,7 +101,7 @@ router.post('/logout', authenticate, async (req: Request, res: Response) => {
     // Still clear the cookie even if DB update fails
   }
   // Don't pass maxAge — clearCookie sets its own expiry to clear the cookie
-  res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+  res.clearCookie('token', clearCookieOptions());
   res.status(200).json({ success: true, data: null, error: null });
 });
 
@@ -207,7 +203,7 @@ router.delete('/account', authenticate, validate(deleteAccountSchema), async (re
     }
 
     await userModel.deleteUser(userId);
-    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+    res.clearCookie('token', clearCookieOptions());
     res.status(200).json({ success: true, data: null, error: null });
   } catch (err) {
     console.error('Delete account error:', err);

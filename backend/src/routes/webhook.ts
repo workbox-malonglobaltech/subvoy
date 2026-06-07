@@ -99,25 +99,38 @@ export async function creditWalletAndCompleteSession(params: {
   source:        'paystack_webhook' | 'paystack_verify';
 }): Promise<void> {
   const { sessionId, userId, amountNgnKobo, destination, reference, source } = params;
+  const desc = `Paystack top-up — ref: ${reference} (${source})`;
 
-  // Use a transaction to mark session complete + credit wallet atomically
+  // Credit the wallet AND complete the session in ONE transaction. This closes
+  // the money-loss window: previously the session was committed first and the
+  // wallet credited afterward, so a crash in between left the user charged but
+  // not credited (and the idempotency guard then blocked any retry).
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Lock the session row to prevent race between webhook + verify
+    // Lock the session — serializes webhook vs verify and provides idempotency.
     const { rows } = await client.query<{ status: string }>(
       `SELECT status FROM wallet_topup_sessions WHERE id = $1 FOR UPDATE`,
       [sessionId]
     );
-
     if (rows[0]?.status !== 'pending') {
-      // Another handler got here first — safe to abort
-      await client.query('ROLLBACK');
+      await client.query('ROLLBACK'); // already processed — idempotent no-op
       return;
     }
 
-    // Mark session as completed
+    // Credit the wallet on the SAME transaction client.
+    if (destination === 'ngn') {
+      await walletModel.topUpNgn(userId, amountNgnKobo, desc, 'deposit', client);
+    } else {
+      const RATE_NGN_PER_USD = Number(process.env.MOCK_NGN_USD_RATE ?? 1600);
+      const usdCents = Math.round((amountNgnKobo / 100 / RATE_NGN_PER_USD) * 100);
+      await walletModel.topUpNgn(userId, amountNgnKobo, `${desc} — NGN deposited`, 'deposit', client);
+      await walletModel.topUpNgn(userId, -amountNgnKobo, `Converted ₦${(amountNgnKobo / 100).toLocaleString()} → USD`, 'conversion', client);
+      await walletModel.topUpUsd(userId, usdCents, `USD credited from ₦ conversion (rate ₦${RATE_NGN_PER_USD}/$)`, 'conversion', client);
+    }
+
+    // Mark the session completed — only now, atomically with the credit.
     await client.query(
       `UPDATE wallet_topup_sessions
        SET status = 'completed', completed_at = NOW(), updated_at = NOW()
@@ -127,26 +140,10 @@ export async function creditWalletAndCompleteSession(params: {
 
     await client.query('COMMIT');
   } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
+    try { await client.query('ROLLBACK'); } catch { /* connection broken */ }
+    throw err; // session stays 'pending' → provider redelivery safely retries
   } finally {
     client.release();
-  }
-
-  // Credit the wallet outside the DB transaction (wallet model uses its own queries)
-  const desc = `Paystack top-up — ref: ${reference} (${source})`;
-
-  if (destination === 'ngn') {
-    await walletModel.topUpNgn(userId, amountNgnKobo, desc, 'deposit');
-  } else {
-    // Convert NGN → USD at the stored mock rate (₦1,600 per $1 for now)
-    // In production: use a live FX rate from the fx_rates table
-    const RATE_NGN_PER_USD = Number(process.env.MOCK_NGN_USD_RATE ?? 1600);
-    const usdCents = Math.round((amountNgnKobo / 100 / RATE_NGN_PER_USD) * 100);
-
-    await walletModel.topUpNgn(userId, amountNgnKobo, `${desc} — NGN deposited`, 'deposit');
-    await walletModel.topUpNgn(userId, -amountNgnKobo, `Converted ₦${(amountNgnKobo / 100).toLocaleString()} → USD`, 'conversion');
-    await walletModel.topUpUsd(userId, usdCents, `USD credited from ₦ conversion (rate ₦${RATE_NGN_PER_USD}/$)`, 'conversion');
   }
 
   console.log(`[paystack] Wallet credited — user ${userId}, ₦${amountNgnKobo / 100}, dest:${destination}, ref:${reference}`);

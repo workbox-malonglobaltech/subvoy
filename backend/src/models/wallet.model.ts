@@ -91,15 +91,24 @@ export async function findOrCreate(userId: string): Promise<Wallet> {
  * Adds koboAmount (negative for deductions) to the NGN balance and logs a transaction.
  * Returns the updated wallet.
  */
+/**
+ * Minimal query executor — satisfied by both the pg Pool and a PoolClient, so
+ * these functions can run standalone OR inside a caller's transaction.
+ */
+export interface Queryable {
+  query: (typeof pool)['query'];
+}
+
 export async function topUpNgn(
   userId: string,
   koboAmount: number,
   description: string,
-  type: WalletTransactionType = 'deposit'
+  type: WalletTransactionType = 'deposit',
+  db: Queryable = pool
 ): Promise<Wallet> {
   const direction: WalletDirection = koboAmount >= 0 ? 'in' : 'out';
 
-  const { rows } = await pool.query<WalletRow>(
+  const { rows } = await db.query<WalletRow>(
     `UPDATE wallets
      SET ngn_balance = ngn_balance + $1, updated_at = NOW()
      WHERE user_id = $2
@@ -109,7 +118,7 @@ export async function topUpNgn(
   const wallet = toWallet(rows[0]);
 
   // Log transaction
-  await pool.query(
+  await db.query(
     `INSERT INTO wallet_transactions
        (user_id, type, currency, amount, direction, description, balance_after)
      VALUES ($1, $2, 'NGN', $3, $4, $5, $6)`,
@@ -126,11 +135,12 @@ export async function topUpUsd(
   userId: string,
   centsAmount: number,
   description: string,
-  type: WalletTransactionType = 'deposit'
+  type: WalletTransactionType = 'deposit',
+  db: Queryable = pool
 ): Promise<Wallet> {
   const direction: WalletDirection = centsAmount >= 0 ? 'in' : 'out';
 
-  const { rows } = await pool.query<WalletRow>(
+  const { rows } = await db.query<WalletRow>(
     `UPDATE wallets
      SET usd_balance = usd_balance + $1, updated_at = NOW()
      WHERE user_id = $2
@@ -139,7 +149,7 @@ export async function topUpUsd(
   );
   const wallet = toWallet(rows[0]);
 
-  await pool.query(
+  await db.query(
     `INSERT INTO wallet_transactions
        (user_id, type, currency, amount, direction, description, balance_after)
      VALUES ($1, $2, 'USD', $3, $4, $5, $6)`,
