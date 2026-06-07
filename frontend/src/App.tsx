@@ -19,6 +19,7 @@ import { WalletPage } from './pages/WalletPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { CompliancePage } from './pages/CompliancePage';
 import { PlansPage } from './pages/PlansPage';
+import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { PaymentCallbackPage } from './pages/PaymentCallbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { InstallBanner } from './components/InstallBanner';
@@ -48,6 +49,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/invite/:token" element={<AcceptInvitePage />} />
 
               {/* Protected app pages */}
               <Route element={<ProtectedRoute />}>

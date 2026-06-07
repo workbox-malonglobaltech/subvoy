@@ -4,6 +4,8 @@ import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { allowsTeams } from '../lib/capabilities';
 import * as workspaceModel from '../models/workspace.model';
+import * as inviteModel from '../models/workspace-invite.model';
+import { sendWorkspaceInviteEmail } from '../services/email.service';
 
 const router = Router();
 
@@ -154,6 +156,81 @@ router.delete('/:id/members/:userId', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Remove member error:', err);
     res.status(500).json({ success: false, data: null, error: 'Failed to remove member' });
+  }
+});
+
+// ── Invitations (owner/admin, business only) ────────────────────────────────────
+
+const inviteSchema = z.object({ email: z.string().email(), role: z.enum(['admin', 'member']) });
+
+// GET /workspaces/:id/invites — pending invitations (owner/admin)
+router.get('/:id/invites', async (req: Request, res: Response) => {
+  try {
+    const role = await workspaceModel.getMemberRole(req.params.id, req.user!.id);
+    if (role !== 'owner' && role !== 'admin') {
+      res.status(403).json({ success: false, data: null, error: 'Only owners and admins can view invitations' });
+      return;
+    }
+    const invites = await inviteModel.listPending(req.params.id);
+    res.status(200).json({ success: true, data: invites, error: null });
+  } catch (err) {
+    console.error('List invites error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to fetch invitations' });
+  }
+});
+
+// POST /workspaces/:id/invites — invite by email (owner/admin, business only)
+router.post('/:id/invites', validate(inviteSchema), async (req: Request, res: Response) => {
+  try {
+    const { workspace, role } = await loadContext(req.params.id, req.user!.id);
+    if (!workspace) {
+      res.status(404).json({ success: false, data: null, error: 'Workspace not found' });
+      return;
+    }
+    if (!allowsTeams(workspace.type)) {
+      res.status(400).json({ success: false, data: null, error: 'This workspace does not support teams' });
+      return;
+    }
+    if (role !== 'owner' && role !== 'admin') {
+      res.status(403).json({ success: false, data: null, error: 'Only owners and admins can invite' });
+      return;
+    }
+    const { email, role: newRole } = req.body as z.infer<typeof inviteSchema>;
+
+    const { invite, token } = await inviteModel.createInvite(req.params.id, email, newRole, req.user!.id);
+
+    const base = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+    sendWorkspaceInviteEmail({
+      toEmail: email,
+      workspaceName: workspace.name,
+      role: newRole,
+      acceptUrl: `${base}/invite/${token}`,
+    }).catch(err => console.error('[invite] email failed:', err));
+
+    res.status(201).json({ success: true, data: invite, error: null });
+  } catch (err) {
+    console.error('Create invite error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to send invitation' });
+  }
+});
+
+// DELETE /workspaces/:id/invites/:inviteId — revoke a pending invite (owner/admin)
+router.delete('/:id/invites/:inviteId', async (req: Request, res: Response) => {
+  try {
+    const role = await workspaceModel.getMemberRole(req.params.id, req.user!.id);
+    if (role !== 'owner' && role !== 'admin') {
+      res.status(403).json({ success: false, data: null, error: 'Only owners and admins can revoke invitations' });
+      return;
+    }
+    const revoked = await inviteModel.revoke(req.params.inviteId, req.params.id);
+    if (!revoked) {
+      res.status(404).json({ success: false, data: null, error: 'Invitation not found' });
+      return;
+    }
+    res.status(200).json({ success: true, data: null, error: null });
+  } catch (err) {
+    console.error('Revoke invite error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to revoke invitation' });
   }
 });
 

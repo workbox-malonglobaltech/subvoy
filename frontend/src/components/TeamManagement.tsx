@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
-import { WorkspaceMemberDetail, WorkspaceRole } from '../../../src/shared/types';
+import { WorkspaceMemberDetail, WorkspaceRole, WorkspaceInvite } from '../../../src/shared/types';
 
 /**
  * Team management for the active Business workspace — list members, invite by
@@ -13,6 +13,7 @@ export function TeamManagement() {
   const { active } = useWorkspace();
   const toast = useToast();
   const [members, setMembers] = useState<WorkspaceMemberDetail[]>([]);
+  const [invites, setInvites] = useState<WorkspaceInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Exclude<WorkspaceRole, 'owner'>>('member');
@@ -25,8 +26,12 @@ export function TeamManagement() {
     if (!wsId) return;
     setLoading(true);
     try {
-      const data = await api.get<WorkspaceMemberDetail[]>(`/workspaces/${wsId}/members`);
-      setMembers(data);
+      const [m, i] = await Promise.all([
+        api.get<WorkspaceMemberDetail[]>(`/workspaces/${wsId}/members`),
+        api.get<WorkspaceInvite[]>(`/workspaces/${wsId}/invites`).catch(() => [] as WorkspaceInvite[]),
+      ]);
+      setMembers(m);
+      setInvites(i);
     } catch {
       /* surfaced elsewhere */
     } finally {
@@ -47,9 +52,33 @@ export function TeamManagement() {
       toast.success('Member added');
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add member');
+      // No account for that email → send an invitation instead.
+      const msg = err instanceof Error ? err.message : '';
+      if (/no subvoy account/i.test(msg)) {
+        try {
+          await api.post(`/workspaces/${wsId}/invites`, { email: trimmed, role });
+          setEmail('');
+          toast.success('Invitation sent');
+          await load();
+        } catch (e2) {
+          toast.error(e2 instanceof Error ? e2.message : 'Failed to send invitation');
+        }
+      } else {
+        toast.error(msg || 'Failed to add member');
+      }
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function revokeInvite(id: string) {
+    if (!wsId) return;
+    try {
+      await api.delete(`/workspaces/${wsId}/invites/${id}`);
+      toast.success('Invitation revoked');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to revoke invitation');
     }
   }
 
@@ -78,7 +107,9 @@ export function TeamManagement() {
   return (
     <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm" aria-labelledby="team-heading">
       <h2 id="team-heading" className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-1">Team</h2>
-      <p className="text-xs text-gray-500 mb-4">Manage who can access <strong>{active?.name}</strong>.</p>
+      <p className="text-xs text-gray-500 mb-4">
+        Manage who can access <strong>{active?.name}</strong>. New to Subvoy? They'll get an email invitation.
+      </p>
 
       {canManage && (
         <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2 mb-5">
@@ -104,9 +135,32 @@ export function TeamManagement() {
             disabled={adding || !email.trim()}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shrink-0"
           >
-            {adding ? 'Adding…' : 'Add member'}
+            {adding ? 'Adding…' : 'Add / invite'}
           </button>
         </form>
+      )}
+
+      {/* Pending invitations */}
+      {canManage && invites.length > 0 && (
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Pending invitations</p>
+          <ul className="divide-y divide-gray-100" role="list">
+            {invites.map(inv => (
+              <li key={inv.id} className="flex items-center justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-700 truncate">{inv.email}</p>
+                  <p className="text-xs text-gray-400">Invited as {inv.role} · pending</p>
+                </div>
+                <button
+                  onClick={() => revokeInvite(inv.id)}
+                  className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                >
+                  Revoke
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {loading ? (
