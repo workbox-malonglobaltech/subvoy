@@ -104,9 +104,10 @@ router.get('/summary', async (req: Request, res: Response) => {
 router.get('/', async (req: Request, res: Response) => {
   try {
     const includeInactive = req.query.includeInactive === 'true';
+    const page = { limit: Number(req.query.limit) || undefined, offset: Number(req.query.offset) || undefined };
     const subs = includeInactive
-      ? await subModel.findAllByWorkspaceIncludingInactive(req.workspace!.id)
-      : await subModel.findAllByWorkspace(req.workspace!.id);
+      ? await subModel.findAllByWorkspaceIncludingInactive(req.workspace!.id, page)
+      : await subModel.findAllByWorkspace(req.workspace!.id, page);
     res.status(200).json({ success: true, data: subs, error: null });
   } catch (err) {
     console.error('Get subscriptions error:', err);

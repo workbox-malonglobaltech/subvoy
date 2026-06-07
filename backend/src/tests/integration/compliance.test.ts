@@ -68,7 +68,7 @@ describe('compliance CRUD (business workspace)', () => {
     const res = await request(app).get('/compliance');
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
-    expect(complianceModel.findAllByWorkspace).toHaveBeenCalledWith('ws-biz', false);
+    expect(complianceModel.findAllByWorkspace).toHaveBeenCalledWith('ws-biz', false, expect.any(Object));
   });
 
   it('POST /compliance creates an item', async () => {
