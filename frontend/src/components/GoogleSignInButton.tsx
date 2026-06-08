@@ -1,12 +1,29 @@
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+
 interface Props {
   label?: string;
 }
 
 export function GoogleSignInButton({ label = 'Continue with Google' }: Props) {
+  const { loginWithGoogle } = useAuth();
+  const [busy, setBusy] = useState(false);
+
+  async function onClick() {
+    setBusy(true);
+    try {
+      await loginWithGoogle();
+    } catch {
+      setBusy(false);
+    }
+  }
+
   return (
-    <a
-      href="/auth/google"
-      className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
     >
       {/* Google "G" logo SVG */}
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -27,7 +44,7 @@ export function GoogleSignInButton({ label = 'Continue with Google' }: Props) {
           fill="#EA4335"
         />
       </svg>
-      {label}
-    </a>
+      {busy ? 'Redirecting…' : label}
+    </button>
   );
 }

@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 /** Key under which the active workspace id is persisted (set by WorkspaceContext). */
@@ -40,6 +42,11 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+  // Attach the Supabase access token (cached read, no network) so the API can
+  // authenticate the request.
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}${path}`, {
@@ -48,6 +55,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(wsId ? { 'X-Workspace-Id': wsId } : {}),
         ...options.headers,
       },
