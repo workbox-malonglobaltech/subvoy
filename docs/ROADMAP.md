@@ -181,10 +181,19 @@ Do-for-you compliance: assisted-first ("prepared filing + human-in-the-loop"), l
   Does **not** block Phase 0 (pure Postgres + app code).
 - Deploy runs `db:migrate` on release; secrets per environment.
 
-## 6b. Mobile
-- **React Native (Expo)** consuming the same REST API; shares `src/shared/types`.
-- Reinforces **API-first** discipline (no server-rendered coupling). Auth via the same JWT; mobile stores the token securely (not the web HttpOnly cookie) — plan a token strategy that serves both web (cookie) and mobile (bearer).
-- Build after web v1 is stable.
+## 6b. Mobile (React Native / Expo)
+- **React Native (Expo)** consuming the same REST API; shares `src/shared/types`. New `mobile/` workspace.
+- **Auth:** add **`Authorization: Bearer` support** to the `authenticate` middleware (it currently reads the httpOnly cookie only) and return the token in `/auth/login`+`/auth/register` bodies for native clients. Web keeps the cookie; mobile uses bearer + `expo-secure-store`. **This bearer prerequisite blocks all mobile work.**
+- Native Google sign-in via `expo-auth-session` (different flow from the web redirect). Workspace scoping reuses `X-Workspace-Id`.
+- Push notifications via `expo-notifications` (device-token registration + backend send) extend the reminder/compliance jobs.
+- **Build after web v1 is launched + validated** (mobile is effectively a second product; don't build it before the web product has live users).
+
+### 6b-i. Billing on mobile — DECIDED: Netflix / "reader" model (no IAP)
+Two distinct payment types; only one is even in scope of store rules:
+- **Wallet top-ups / autopay / paying the user's real bills** → **exempt** from store IAP ("goods & services consumed outside the app", Apple 3.1.3/3.1.5; like Uber/Cash App). Works normally in-app.
+- **Subvoy's own plan** (Plus/Team/Business) → **not sold in-app**. Users upgrade on **subvoy.com** (existing Paystack/Stripe checkout); the app only authenticates and reflects the account's plan. Avoids the 15–30% store cut.
+
+**Mobile rules of engagement:** read-only plan screen (current plan + features) + a neutral "Manage your plan at subvoy.com"; **no in-app buy buttons / no plan prices on a buy path.** This drops the entire IAP workstream (mobile Plans task becomes a small read-only screen). ⚠️ Store policies shift (Epic v. Apple, EU DMA, US external-link entitlement) — re-verify Apple 3.1.1/3.1.3/3.1.5 + Play Payments at submission.
 
 ## 6c. Global from day one
 The app serves users **worldwide**; **country-specific settings are toggled in the super-admin dashboard** (extends the limits registry into a broader platform-config registry).
@@ -209,7 +218,8 @@ Backend 273/273 tests green.
 ## 8. Open decisions (still to settle)
 - [ ] **API host / cron model**: always-on API (in-process cron) vs Vercel functions + external scheduler (§6 fork).
 - [ ] **DB**: Supabase (DB + storage + pg_cron) vs Neon (pure Postgres + separate storage) — leaning Supabase.
-- [ ] **Web auth for mobile**: cookie (web) + bearer token (mobile) strategy.
+- [x] **Mobile billing** — DECIDED: **Netflix/reader model, no IAP** (plans bought on web; wallet/bill payments exempt). See §6b-i.
+- [x] **Web/mobile auth** — DECIDED: cookie (web) + **bearer** (mobile); add bearer to `authenticate`. See §6b.
 - [ ] **Brand**: keep everything under "Subvoy" or give the business/compliance side its own name on the shared backend.
 - [ ] **Price points** per tier + currency (placeholders above).
 - [ ] **Starting free cap number** (default ~10) and **hard vs soft** cap (leaning hard) — set live by super admin.
