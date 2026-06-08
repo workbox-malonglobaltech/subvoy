@@ -217,11 +217,38 @@ Backend 273/273 tests green.
 
 ## 8. Open decisions (still to settle)
 - [ ] **API host / cron model**: always-on API (in-process cron) vs Vercel functions + external scheduler (§6 fork).
-- [ ] **DB**: Supabase (DB + storage + pg_cron) vs Neon (pure Postgres + separate storage) — leaning Supabase.
-- [x] **Mobile billing** — DECIDED: **Netflix/reader model, no IAP** (plans bought on web; wallet/bill payments exempt). See §6b-i.
-- [x] **Web/mobile auth** — DECIDED: cookie (web) + **bearer** (mobile); add bearer to `authenticate`. See §6b.
+- [x] **DB + Auth** — DECIDED: **Supabase** (Postgres + **Supabase Auth as the single identity provider** for web/iOS/Android, used as IdP-only behind the Express API — no RLS/direct-DB). See §9.
+- [x] **Mobile billing** — DECIDED: **no-IAP / multiplatform-SaaS model** (plans bought on web; wallet/bill payments exempt). See §6b-i.
+- [x] **Web/mobile auth** — DECIDED: **Supabase Auth** issues JWTs; Express verifies them; one IdP for all 3 clients (supersedes the custom cookie/bearer plan). See §9.
 - [ ] **Brand**: keep everything under "Subvoy" or give the business/compliance side its own name on the shared backend.
 - [ ] **Price points** per tier + currency (placeholders above).
 - [ ] **Starting free cap number** (default ~10) and **hard vs soft** cap (leaning hard) — set live by super admin.
 - [ ] **Global payments v1 scope**: which countries/providers enabled at launch (recommend: tracking+reminders+compliance global; payments start with Paystack/Africa, Stripe fast-follow).
 - [ ] Business-specific payment metadata (vendor, cost-center, approver, invoice) — likely post-foundation.
+
+---
+
+## 9. Master plan — Unified Auth (Supabase) + Mobile + Web-only Billing
+**Goal:** one identity provider (Supabase Auth) for web + iOS + Android behind the existing Express API; a React Native app; store-compliant web-only plan billing.
+
+**Key insight:** adopting Supabase Auth **subsumes the custom bearer work** — once the API verifies Supabase JWTs, all three clients authenticate the same way. Auth migration and mobile auth are one effort.
+
+**App Store guidelines verified (mid-2026):**
+- **4.8 Sign in with Apple** — required on iOS once Google login is offered → we add it (Supabase Apple provider).
+- **3.1.5(a)** — wallet top-ups / paying real bills are **exempt** from IAP.
+- **No-IAP SaaS model** — Subvoy isn't a "reader app"; framed as multiplatform SaaS (Slack/Notion-style): no in-app sale of digital goods → no IAP. US now also allows external purchase links, but a Dec-2025 ruling lets Apple charge a (<27%) commission on them and it's under SCOTUS appeal — so **web-only/no-link stays the safest, zero-commission path**. Re-verify 3.1.1/3.1.3/3.1.5/4.8 at submission.
+
+### Phase A — Supabase Auth migration (DO NOW, pre-launch)
+A1 enable email/Google/**Apple** providers · A2 **Express JWT-verify middleware** (verify Supabase JWT → map `sub`→domain user) · A3 `users.auth_user_id` (profile keyed by Supabase uid) · A4 import existing users (bcrypt-compatible) · A5 cut auth endpoints over to Supabase, retire custom JWT/`tokenVersion`/OAuth-state · A6 web client `supabase-js` · A7/A8 tests (mocked + real-DB).
+> **Migration bridge:** on first Supabase login, an existing user is matched by email and their `auth_user_id` linked — no forced password reset.
+
+### Phase B — Web launch
+Deploy (host decision + secrets + DNS); validate with real users; monitor (Sentry).
+
+### Phase C — Mobile app (Expo, post-launch)
+`supabase-js` + `expo-secure-store`; auth screens (email/Google/**Apple**); workspace switcher; subscriptions/compliance/wallet; biometric unlock; deep-link invites; push (`expo-notifications`).
+
+### Phase D — Mobile billing + store release
+Read-only Plans screen (no buy buttons/prices; optional "manage on subvoy.com"); EAS builds + per-platform OAuth client IDs (Android SHA-1, iOS URL scheme); TestFlight + Play internal → submit.
+
+**Sequencing:** Phase A now (cheapest pre-launch; eliminates separate mobile-auth) → B launch → C mobile → D store. Phase A replaces the just-hardened custom auth; the right trade pre-launch (cookie config, `X-Workspace-Id`, rate-limiting survive; custom JWT/OAuth-state retired).
