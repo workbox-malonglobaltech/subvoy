@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
@@ -16,6 +17,10 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { WalletPage } from './pages/WalletPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { CompliancePage } from './pages/CompliancePage';
+import { PlansPage } from './pages/PlansPage';
+import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { BillingCallbackPage } from './pages/BillingCallbackPage';
 import { PaymentCallbackPage } from './pages/PaymentCallbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { InstallBanner } from './components/InstallBanner';
@@ -25,12 +30,14 @@ import { AdminErrorsPage } from './pages/admin/AdminErrorsPage';
 import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
 import { AdminAnnouncementsPage } from './pages/admin/AdminAnnouncementsPage';
 import { AdminAuditPage } from './pages/admin/AdminAuditPage';
+import { AdminLimitsPage } from './pages/admin/AdminLimitsPage';
 import './App.css';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <WorkspaceProvider>
         <ToastProvider>
           <ErrorBoundary>
             <InstallBanner />
@@ -43,6 +50,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/invite/:token" element={<AcceptInvitePage />} />
 
               {/* Protected app pages */}
               <Route element={<ProtectedRoute />}>
@@ -52,6 +60,9 @@ function App() {
                 <Route path="/email-import" element={<EmailImportPage />} />
                 <Route path="/wallet" element={<WalletPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/compliance" element={<CompliancePage />} />
+                <Route path="/plans" element={<PlansPage />} />
+                <Route path="/billing/callback" element={<BillingCallbackPage />} />
                 <Route path="/payment/callback" element={<PaymentCallbackPage />} />
               </Route>
 
@@ -62,6 +73,7 @@ function App() {
                 <Route path="errors" element={<AdminErrorsPage />} />
                 <Route path="notifications" element={<AdminNotificationsPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="limits" element={<AdminLimitsPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
               </Route>
 
@@ -70,6 +82,7 @@ function App() {
             </Routes>
           </ErrorBoundary>
         </ToastProvider>
+        </WorkspaceProvider>
       </AuthProvider>
     </BrowserRouter>
   );

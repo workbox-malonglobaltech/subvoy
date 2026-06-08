@@ -10,6 +10,7 @@
  */
 
 import { pool } from '../db';
+import { captureException } from '../lib/sentry';
 import { ErrorLogLevel } from '../../../src/shared/types';
 
 // ── In-memory rolling window for alert threshold ──────────────────────────────
@@ -54,9 +55,12 @@ export async function logError(opts: LogErrorOptions): Promise<void> {
   // 1. Console output (synchronous — never lost)
   console.error(`[${level.toUpperCase()}]${opts.route ? ' ' + opts.route : ''} ${message}`, stack ?? '');
 
-  // 2. Record in rolling window (for alert threshold)
+  // 2. Record in rolling window (for alert threshold) + report to Sentry
   if (level === 'error' || level === 'fatal') {
     recordForAlert();
+    captureException(err ?? new Error(message), {
+      route: opts.route, method: opts.method, statusCode: opts.statusCode, userId: opts.userId,
+    });
   }
 
   // 3. Persist to DB — fire-and-forget so a DB slowdown never blocks responses.

@@ -2,6 +2,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+// Initialise error monitoring as early as possible (no-op without SENTRY_DSN).
+import './lib/sentry';
+
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -11,6 +14,12 @@ import { errorHandler } from './middleware/errorHandler';
 import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import subscriptionsRouter from './routes/subscriptions';
+import workspacesRouter from './routes/workspaces';
+import complianceRouter from './routes/compliance';
+import plansRouter from './routes/plans';
+import invitesRouter from './routes/invites';
+import billingRouter from './routes/billing';
+import billingWebhookRouter from './routes/billing-webhook';
 import notificationsRouter from './routes/notifications';
 import importsRouter from './routes/imports';
 import analyticsRouter from './routes/analytics';
@@ -40,6 +49,7 @@ app.use(cors({
 // ── Webhook routes must receive the RAW body for signature verification ───────
 // Mount BEFORE express.json() so the Buffer is preserved.
 app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter);
+app.use('/billing/webhook', express.raw({ type: 'application/json' }), billingWebhookRouter);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -80,6 +90,11 @@ app.use(globalLimiter);
 app.use('/health', healthRouter);
 app.use('/auth', authLimiter, authRouter);
 app.use('/subscriptions', subscriptionsRouter);
+app.use('/workspaces', workspacesRouter);
+app.use('/compliance', complianceRouter);
+app.use('/plans', plansRouter);
+app.use('/invites', invitesRouter);
+app.use('/billing', billingRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/imports', importLimiter, importsRouter);
 app.use('/analytics', analyticsRouter);
@@ -95,10 +110,19 @@ app.use(errorHandler);
 
 // Start background jobs and HTTP server (skip in test — each suite imports app directly)
 if (!isTest) {
-  startReminderJob();
-  startFxJob();
-  startWalletJob();
-  startAutopayJob();
+  // Cron runs IN-PROCESS, so with >1 instance every instance would fire the same
+  // jobs (duplicate reminders/FX/charges). Gate behind RUN_JOBS so exactly ONE
+  // instance (or a dedicated worker) runs them. Default 'true' preserves the
+  // current single-instance behaviour.
+  if (process.env.RUN_JOBS !== 'false') {
+    startReminderJob();
+    startFxJob();
+    startWalletJob();
+    startAutopayJob();
+    console.log('[jobs] background jobs started (RUN_JOBS)');
+  } else {
+    console.log('[jobs] background jobs disabled on this instance (RUN_JOBS=false)');
+  }
   app.listen(PORT, () => {
     console.log(`Subvoy backend running on port ${PORT}`);
   });

@@ -1,0 +1,33 @@
+# Fly.io — Subvoy API (PRODUCTION). Deploy: flyctl deploy --config fly.production.toml
+# Secrets (NOT here — set with `flyctl secrets set -a subvoy-api-prod ...`):
+#   DATABASE_URL JWT_SECRET ENCRYPTION_KEY SUPABASE_JWT_SECRET RESEND_API_KEY
+#   PAYSTACK_SECRET_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET SENTRY_DSN
+#   GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET FRONTEND_URL COOKIE_SAMESITE
+#   COOKIE_SECURE COOKIE_DOMAIN
+app = "subvoy-api-prod"
+primary_region = "lhr"   # London — keep in the same region as Supabase
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+  RUN_JOBS = "true"        # single machine runs cron
+
+[deploy]
+  release_command = "node backend/dist/backend/src/db/migrate.js"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false   # keep on so in-process cron keeps running
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "10s"

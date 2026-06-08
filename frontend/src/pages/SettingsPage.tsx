@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NavBar } from '../components/NavBar';
+import { TeamManagement } from '../components/TeamManagement';
 
 interface Prefs {
   emailEnabled: boolean;
@@ -16,6 +18,7 @@ interface CustomCategory { id: string; name: string; }
 
 export function SettingsPage() {
   const { user, logout, updateProfile } = useAuth();
+  const { active } = useWorkspace();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -251,8 +254,22 @@ export function SettingsPage() {
                   : '—'}
               </dd>
             </div>
+
+            {/* Plan */}
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-gray-500">Plan</dt>
+              <dd className="flex items-center gap-2">
+                <span className="font-medium text-gray-900 capitalize">{active?.plan ?? 'free'}</span>
+                <Link to="/plans" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
+                  View plans
+                </Link>
+              </dd>
+            </div>
           </dl>
         </section>
+
+        {/* ── Team (Business workspaces only) ───────────────────────────────── */}
+        {active?.type === 'business' && <TeamManagement />}
 
         {/* ── Change Password ───────────────────────────────────────────────── */}
         <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm" aria-labelledby="password-heading">

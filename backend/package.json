@@ -5,14 +5,17 @@
   "scripts": {
     "dev": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/backend/src/index.js",
     "db:migrate": "ts-node --transpile-only src/db/migrate.ts",
+    "migrate:prod": "node dist/backend/src/db/migrate.js",
     "test": "jest --forceExit",
+    "test:db": "jest --config jest.db.config.cjs --runInBand --forceExit",
     "test:watch": "jest --watch"
   },
   "dependencies": {
     "@azure/msal-node": "^5.1.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@sentry/node": "^10.56.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

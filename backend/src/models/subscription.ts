@@ -1,9 +1,12 @@
 import { pool } from '../db';
+import { clampLimit, safeOffset } from '../lib/pagination';
 import { Subscription, CreateSubscriptionInput, UpdateSubscriptionInput } from '../../../src/shared/types';
 
 interface SubscriptionRow {
   id: string;
+  workspace_id: string;
   user_id: string;
+  kind: string;
   name: string;
   amount: string;
   currency: string;
@@ -23,6 +26,8 @@ interface SubscriptionRow {
 function toSubscription(row: SubscriptionRow): Subscription {
   return {
     id: row.id,
+    workspaceId: row.workspace_id,
+    kind: (row.kind ?? 'payment') as Subscription['kind'],
     name: row.name,
     amount: parseFloat(row.amount),
     currency: row.currency,
@@ -39,29 +44,38 @@ function toSubscription(row: SubscriptionRow): Subscription {
   };
 }
 
-export async function findAllByUser(userId: string): Promise<Subscription[]> {
+export async function findAllByWorkspace(
+  workspaceId: string,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE ORDER BY next_billing_date ASC',
-    [userId]
+    `SELECT * FROM subscriptions WHERE workspace_id = $1 AND is_active = TRUE
+     ORDER BY next_billing_date ASC LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toSubscription);
 }
 
-export async function findById(id: string, userId: string): Promise<Subscription | null> {
+export async function findById(id: string, workspaceId: string): Promise<Subscription | null> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
-    [id, userId]
+    'SELECT * FROM subscriptions WHERE id = $1 AND workspace_id = $2',
+    [id, workspaceId]
   );
   if (!rows[0]) return null;
   return toSubscription(rows[0]);
 }
 
-export async function create(userId: string, data: CreateSubscriptionInput): Promise<Subscription> {
+export async function create(
+  workspaceId: string,
+  userId: string,
+  data: CreateSubscriptionInput
+): Promise<Subscription> {
   const { rows } = await pool.query<SubscriptionRow>(
     `INSERT INTO subscriptions
-       (user_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes, autopay, autopay_max_amount)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+       (workspace_id, user_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes, autopay, autopay_max_amount)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
     [
+      workspaceId,
       userId,
       data.name,
       data.amount,
@@ -80,7 +94,7 @@ export async function create(userId: string, data: CreateSubscriptionInput): Pro
 
 export async function update(
   id: string,
-  userId: string,
+  workspaceId: string,
   data: UpdateSubscriptionInput
 ): Promise<Subscription | null> {
   const fields: string[] = [];
@@ -103,39 +117,43 @@ export async function update(
   if (data.autopay !== undefined) { fields.push(`autopay = $${idx++}`); values.push(data.autopay); }
   if (data.autopayMaxAmount !== undefined) { fields.push(`autopay_max_amount = $${idx++}`); values.push(data.autopayMaxAmount); }
 
-  if (fields.length === 0) return findById(id, userId);
+  if (fields.length === 0) return findById(id, workspaceId);
 
   fields.push(`updated_at = NOW()`);
-  values.push(id, userId);
+  values.push(id, workspaceId);
 
   const { rows } = await pool.query<SubscriptionRow>(
-    `UPDATE subscriptions SET ${fields.join(', ')} WHERE id = $${idx++} AND user_id = $${idx++} RETURNING *`,
+    `UPDATE subscriptions SET ${fields.join(', ')} WHERE id = $${idx++} AND workspace_id = $${idx++} RETURNING *`,
     values
   );
   if (!rows[0]) return null;
   return toSubscription(rows[0]);
 }
 
-export async function findAllByUserIncludingInactive(userId: string): Promise<Subscription[]> {
+export async function findAllByWorkspaceIncludingInactive(
+  workspaceId: string,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY is_active DESC, next_billing_date ASC',
-    [userId]
+    `SELECT * FROM subscriptions WHERE workspace_id = $1
+     ORDER BY is_active DESC, next_billing_date ASC LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toSubscription);
 }
 
-export async function softDelete(id: string, userId: string): Promise<boolean> {
+export async function softDelete(id: string, workspaceId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
-    'UPDATE subscriptions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2',
-    [id, userId]
+    'UPDATE subscriptions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND workspace_id = $2',
+    [id, workspaceId]
   );
   return (rowCount ?? 0) > 0;
 }
 
-export async function hardDelete(id: string, userId: string): Promise<boolean> {
+export async function hardDelete(id: string, workspaceId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
-    'DELETE FROM subscriptions WHERE id = $1 AND user_id = $2',
-    [id, userId]
+    'DELETE FROM subscriptions WHERE id = $1 AND workspace_id = $2',
+    [id, workspaceId]
   );
   return (rowCount ?? 0) > 0;
 }
@@ -155,7 +173,7 @@ export async function updateLastKnownAmount(id: string, amount: number): Promise
  * Advances next_billing_date by one billing cycle and returns the updated subscription.
  * Used after a wallet payment is recorded.
  */
-export async function advanceNextBillingDate(id: string, userId: string): Promise<Subscription | null> {
+export async function advanceNextBillingDate(id: string, workspaceId: string): Promise<Subscription | null> {
   const { rows } = await pool.query<SubscriptionRow>(
     `UPDATE subscriptions
      SET next_billing_date =
@@ -166,21 +184,21 @@ export async function advanceNextBillingDate(id: string, userId: string): Promis
          ELSE next_billing_date
        END,
        updated_at = NOW()
-     WHERE id = $1 AND user_id = $2
+     WHERE id = $1 AND workspace_id = $2
      RETURNING *`,
-    [id, userId]
+    [id, workspaceId]
   );
   if (!rows[0]) return null;
   return toSubscription(rows[0]);
 }
 
-export async function bulkDelete(ids: string[], userId: string): Promise<number> {
+export async function bulkDelete(ids: string[], workspaceId: string): Promise<number> {
   if (ids.length === 0) return 0;
   const placeholders = ids.map((_, i) => `$${i + 2}`).join(', ');
   const { rowCount } = await pool.query(
     `UPDATE subscriptions SET is_active = FALSE, updated_at = NOW()
-     WHERE id IN (${placeholders}) AND user_id = $1`,
-    [userId, ...ids]
+     WHERE id IN (${placeholders}) AND workspace_id = $1`,
+    [workspaceId, ...ids]
   );
   return rowCount ?? 0;
 }
