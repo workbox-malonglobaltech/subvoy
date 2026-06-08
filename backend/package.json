@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "db:migrate": "ts-node --transpile-only src/db/migrate.ts",
     "test": "jest --forceExit",
+    "test:db": "jest --config jest.db.config.cjs --runInBand --forceExit",
     "test:watch": "jest --watch"
   },
   "dependencies": {
