@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/backend/src/index.js",
     "db:migrate": "ts-node --transpile-only src/db/migrate.ts",
+    "migrate:prod": "node dist/backend/src/db/migrate.js",
     "test": "jest --forceExit",
     "test:db": "jest --config jest.db.config.cjs --runInBand --forceExit",
     "test:watch": "jest --watch"
