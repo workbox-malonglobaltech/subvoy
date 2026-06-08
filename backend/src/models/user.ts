@@ -54,6 +54,33 @@ export async function findById(id: string): Promise<User | null> {
   return toUser(rows[0]);
 }
 
+/** Finds a user by their linked Supabase identity (auth_user_id). */
+export async function findByAuthId(authUserId: string): Promise<User | null> {
+  const { rows } = await pool.query<UserRow>(
+    'SELECT id, email, name, password_hash, token_version, role, suspended_at, created_at FROM users WHERE auth_user_id = $1',
+    [authUserId]
+  );
+  if (!rows[0]) return null;
+  return toUser(rows[0]);
+}
+
+/** Links an existing user to a Supabase identity (migration bridge). */
+export async function linkAuthUserId(userId: string, authUserId: string): Promise<void> {
+  await pool.query(
+    'UPDATE users SET auth_user_id = $1, updated_at = NOW() WHERE id = $2',
+    [authUserId, userId]
+  );
+}
+
+/** Creates a user provisioned by Supabase (no local password). */
+export async function createFromAuth(data: { email: string; name: string | null; authUserId: string }): Promise<User> {
+  const { rows } = await pool.query<UserRow>(
+    "INSERT INTO users (email, password_hash, name, auth_user_id) VALUES ($1, '', $2, $3) RETURNING *",
+    [data.email, data.name, data.authUserId]
+  );
+  return toUser(rows[0]);
+}
+
 /** Returns token_version for JWT validation — separate query to avoid coupling. */
 export async function getTokenVersion(userId: string): Promise<number | null> {
   const { rows } = await pool.query<{ token_version: number }>(
