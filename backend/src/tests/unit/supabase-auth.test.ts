@@ -2,6 +2,8 @@
  * Unit tests for Supabase Auth integration (Phase A): token verification +
  * domain-user resolution (find-by-auth / link-by-email / create).
  */
+// Force the legacy HS256 path for unit tests (JWKS/asymmetric is integration-tested).
+delete process.env.SUPABASE_URL;
 process.env.SUPABASE_JWT_SECRET = 'test-supabase-secret';
 
 jest.mock('../../models/user', () => ({
@@ -27,22 +29,22 @@ describe('verifySupabaseToken', () => {
     expect(isSupabaseAuthEnabled()).toBe(true);
   });
 
-  it('extracts identity from a valid token', () => {
+  it('extracts identity from a valid token', async () => {
     const token = sign({ sub: 'sb-1', email: 'a@b.com', aud: 'authenticated', user_metadata: { full_name: 'Ada' } });
-    expect(verifySupabaseToken(token)).toEqual({ supabaseUserId: 'sb-1', email: 'a@b.com', name: 'Ada' });
+    expect(await verifySupabaseToken(token)).toEqual({ supabaseUserId: 'sb-1', email: 'a@b.com', name: 'Ada' });
   });
 
-  it('rejects a token signed with the wrong secret', () => {
+  it('rejects a token signed with the wrong secret', async () => {
     const bad = jwt.sign({ sub: 'sb-1' }, 'other-secret', { algorithm: 'HS256' });
-    expect(() => verifySupabaseToken(bad)).toThrow();
+    await expect(verifySupabaseToken(bad)).rejects.toThrow();
   });
 
-  it('rejects a token with no subject', () => {
-    expect(() => verifySupabaseToken(sign({ email: 'a@b.com' }))).toThrow(/subject/);
+  it('rejects a token with no subject', async () => {
+    await expect(verifySupabaseToken(sign({ email: 'a@b.com' }))).rejects.toThrow(/subject/);
   });
 
-  it('rejects an unexpected audience', () => {
-    expect(() => verifySupabaseToken(sign({ sub: 'sb-1', aud: 'other' }))).toThrow(/audience/);
+  it('rejects an unexpected audience', async () => {
+    await expect(verifySupabaseToken(sign({ sub: 'sb-1', aud: 'other' }))).rejects.toThrow(/audience/);
   });
 });
 

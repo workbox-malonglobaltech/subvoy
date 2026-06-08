@@ -22,7 +22,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
   if (bearer && isSupabaseAuthEnabled()) {
     try {
-      const identity = verifySupabaseToken(bearer);
+      const identity = await verifySupabaseToken(bearer);
       const user = await resolveDomainUser(identity);
       if (user.suspendedAt) {
         res.status(403).json({ success: false, data: null, error: 'Your account has been suspended. Please contact support.' });
