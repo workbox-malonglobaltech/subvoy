@@ -31,7 +31,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       req.user = { id: user.id, role: user.role };
       next();
       return;
-    } catch {
+    } catch (err) {
+      console.error('[auth] Supabase bearer verification failed:', err instanceof Error ? err.message : err);
       res.status(401).json({ success: false, data: null, error: 'Invalid or expired token' });
       return;
     }
