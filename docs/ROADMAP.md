@@ -216,7 +216,7 @@ Backend 273/273 tests green.
 ---
 
 ## 8. Open decisions (still to settle)
-- [ ] **API host / cron model**: always-on API (in-process cron) vs Vercel functions + external scheduler (§6 fork).
+- [x] **API host / cron model** — DECIDED: **Fly.io** (always-on machine, in-process cron via `RUN_JOBS` on one instance). Frontend on Vercel. See `docs/SETUP.md`.
 - [x] **DB + Auth** — DECIDED: **Supabase** (Postgres + **Supabase Auth as the single identity provider** for web/iOS/Android, used as IdP-only behind the Express API — no RLS/direct-DB). See §9.
 - [x] **Mobile billing** — DECIDED: **no-IAP / multiplatform-SaaS model** (plans bought on web; wallet/bill payments exempt). See §6b-i.
 - [x] **Web/mobile auth** — DECIDED: **Supabase Auth** issues JWTs; Express verifies them; one IdP for all 3 clients (supersedes the custom cookie/bearer plan). See §9.

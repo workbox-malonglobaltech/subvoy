@@ -1,17 +1,13 @@
 name: Deploy
 
-# Pushing to `staging` deploys to the staging environment; pushing to `main`
-# deploys to production. Can also be run manually from the Actions tab.
+# Backend (API) deploy to Fly.io. The frontend deploys separately via Vercel's
+# own GitHub integration.
+#   push to `staging` -> subvoy-api-staging   (fly.staging.toml)
+#   push to `main`    -> subvoy-api-prod       (fly.production.toml)
 #
-# REQUIRED per-environment secrets (Settings → Environments → staging|production):
-#   DEPLOY_HOST        server hostname or IP
-#   DEPLOY_USER        SSH user
-#   DEPLOY_SSH_KEY     private key authorised on the server
-#   DEPLOY_PATH        absolute path to the checkout on the server (e.g. /var/www/subvoy)
-#
-# The migration step uses the server's own .env (DATABASE_URL etc.), so no DB
-# secrets are needed here. The job no-ops with a clear message if DEPLOY_HOST is
-# unset, so enabling an environment is purely a matter of adding its secrets.
+# Required secret: FLY_API_TOKEN (Settings → Secrets, or per-environment).
+# Migrations run automatically via each app's [deploy] release_command.
+# No-ops with a clear message until FLY_API_TOKEN is set.
 
 on:
   push:
@@ -28,30 +24,32 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     steps:
-      - name: Guard — require deploy secrets
+      - name: Guard — require FLY_API_TOKEN
         id: guard
         run: |
-          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
-            echo "::warning::DEPLOY_HOST is not set for this environment — skipping deploy. Add environment secrets to enable."
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "::warning::FLY_API_TOKEN not set for this environment — skipping deploy. Add it to enable."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy over SSH
+      - name: Checkout
         if: steps.guard.outputs.ready == 'true'
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            set -e
-            cd "${{ secrets.DEPLOY_PATH }}"
-            git fetch --all
-            git reset --hard origin/${{ github.ref_name }}
-            npm ci
-            npm run db:migrate          # idempotent — skips already-applied migrations
-            npm run build
-            pm2 reload subvoy-backend --update-env || pm2 start ecosystem.config.cjs
-            pm2 save
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        if: steps.guard.outputs.ready == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy (staging)
+        if: steps.guard.outputs.ready == 'true' && github.ref_name == 'staging'
+        run: flyctl deploy --config fly.staging.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deploy (production)
+        if: steps.guard.outputs.ready == 'true' && github.ref_name == 'main'
+        run: flyctl deploy --config fly.production.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
