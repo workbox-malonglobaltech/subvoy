@@ -32,6 +32,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Compiled output (entry + shared types live under here).
 COPY --from=build /app/backend/dist ./backend/dist
+# Migration files are .sql — tsc doesn't emit them, so copy them into the
+# compiled tree where migrate.js expects them (dist/backend/src/db/migrations).
+COPY --from=build /app/backend/src/db/migrations ./backend/dist/backend/src/db/migrations
 
 EXPOSE 8080
 CMD ["node", "backend/dist/backend/src/index.js"]
