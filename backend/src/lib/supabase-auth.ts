@@ -45,8 +45,8 @@ async function fetchJwks(force = false): Promise<Jwk[]> {
   return jwksCache.keys;
 }
 
-/** Resolves the signing public key for a token's `kid` (refetching once on a miss). */
-async function publicKeyFor(token: string): Promise<crypto.KeyObject> {
+/** Resolves the signing public key (PEM) for a token's `kid` (refetching once on a miss). */
+async function publicKeyFor(token: string): Promise<string> {
   const decoded = jwt.decode(token, { complete: true });
   if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
     throw new Error('Invalid Supabase token header');
@@ -55,7 +55,9 @@ async function publicKeyFor(token: string): Promise<crypto.KeyObject> {
   let jwk = (await fetchJwks()).find(k => k.kid === kid);
   if (!jwk) jwk = (await fetchJwks(true)).find(k => k.kid === kid); // key rotation
   if (!jwk) throw new Error('No matching Supabase signing key');
-  return crypto.createPublicKey({ key: jwk as crypto.JsonWebKey, format: 'jwk' });
+  // jsonwebtoken expects a PEM string for asymmetric keys, not a KeyObject.
+  return crypto.createPublicKey({ key: jwk as crypto.JsonWebKey, format: 'jwk' })
+    .export({ type: 'spki', format: 'pem' }) as string;
 }
 
 function identityFromClaims(payload: { sub?: unknown; email?: unknown; user_metadata?: unknown }): SupabaseIdentity {
