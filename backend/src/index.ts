@@ -110,10 +110,19 @@ app.use(errorHandler);
 
 // Start background jobs and HTTP server (skip in test — each suite imports app directly)
 if (!isTest) {
-  startReminderJob();
-  startFxJob();
-  startWalletJob();
-  startAutopayJob();
+  // Cron runs IN-PROCESS, so with >1 instance every instance would fire the same
+  // jobs (duplicate reminders/FX/charges). Gate behind RUN_JOBS so exactly ONE
+  // instance (or a dedicated worker) runs them. Default 'true' preserves the
+  // current single-instance behaviour.
+  if (process.env.RUN_JOBS !== 'false') {
+    startReminderJob();
+    startFxJob();
+    startWalletJob();
+    startAutopayJob();
+    console.log('[jobs] background jobs started (RUN_JOBS)');
+  } else {
+    console.log('[jobs] background jobs disabled on this instance (RUN_JOBS=false)');
+  }
   app.listen(PORT, () => {
     console.log(`Subvoy backend running on port ${PORT}`);
   });

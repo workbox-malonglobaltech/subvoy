@@ -8,6 +8,12 @@ async function migrate(): Promise<void> {
 
   const client = await pool.connect();
   try {
+    // Session-level advisory lock: if two instances run migrations at once (e.g.
+    // a rolling deploy), the second blocks here until the first finishes, instead
+    // of racing to apply the same file. The constant is an arbitrary app-wide key.
+    const LOCK_KEY = 4815162342;
+    await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS migrations (
         id SERIAL PRIMARY KEY,
@@ -37,6 +43,8 @@ async function migrate(): Promise<void> {
     }
     console.log('All migrations complete.');
   } finally {
+    // Release the advisory lock before returning the connection to the pool.
+    try { await client.query('SELECT pg_advisory_unlock($1)', [4815162342]); } catch { /* lock auto-frees on disconnect */ }
     client.release();
     await pool.end();
   }
