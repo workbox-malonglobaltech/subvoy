@@ -40,19 +40,27 @@ npm run db:migrate   # Run database migrations
 
 ## Project Structure
 ```
+frontend/
+└── src/
+    ├── components/    # Reusable UI components
+    ├── pages/         # Page-level components
+    ├── hooks/         # Custom React hooks
+    ├── contexts/      # React context providers (auth, workspace, toast)
+    └── lib/           # API client + helpers
+backend/
+└── src/
+    ├── routes/        # API route handlers
+    ├── middleware/    # Auth, workspace context, error handling
+    ├── services/      # Business logic
+    ├── models/        # DB access
+    ├── jobs/          # Scheduled cron jobs
+    └── db/migrations/ # SQL migrations
 src/
-├── frontend/
-│   ├── components/    # Reusable UI components
-│   ├── pages/         # Page-level components
-│   ├── hooks/         # Custom React hooks
-│   └── types/         # TypeScript interfaces
-├── backend/
-│   ├── routes/        # API route handlers
-│   ├── middleware/     # Auth, error handling, CORS
-│   ├── services/      # Business logic
-│   └── db/            # Models + migrations
-└── shared/            # Types and utils used by both
+└── shared/types/      # TypeScript types shared by frontend + backend
+                       #   imported via ../../../src/shared/types
 ```
+> Note: app code lives in `frontend/src` and `backend/src` (npm workspaces).
+> Only **shared types** live at the repo-root `src/shared`.
 
 ---
 

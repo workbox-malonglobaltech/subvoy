@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { clampLimit, safeOffset } from '../lib/pagination';
 import type { Workspace, WorkspaceType, WorkspaceRole, WorkspaceMemberDetail } from '../../../src/shared/types';
 
 interface WorkspaceRow {
@@ -136,14 +137,18 @@ function toMemberDetail(row: MemberDetailRow): WorkspaceMemberDetail {
 }
 
 /** Lists a workspace's members with their identity — owner first, then by join date. */
-export async function listMembers(workspaceId: string): Promise<WorkspaceMemberDetail[]> {
+export async function listMembers(
+  workspaceId: string,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<WorkspaceMemberDetail[]> {
   const { rows } = await pool.query<MemberDetailRow>(
     `SELECT m.user_id, u.email, u.name, m.role, m.created_at
      FROM workspace_members m
      JOIN users u ON u.id = m.user_id
      WHERE m.workspace_id = $1
-     ORDER BY (m.role = 'owner') DESC, m.created_at ASC`,
-    [workspaceId]
+     ORDER BY (m.role = 'owner') DESC, m.created_at ASC
+     LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toMemberDetail);
 }
@@ -196,6 +201,14 @@ export async function updateMemberRole(
     [workspaceId, userId]
   );
   return rows[0] ? toMemberDetail(rows[0]) : null;
+}
+
+export async function countMembers(workspaceId: string): Promise<number> {
+  const { rows } = await pool.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM workspace_members WHERE workspace_id = $1`,
+    [workspaceId]
+  );
+  return parseInt(rows[0].count, 10);
 }
 
 export async function removeMember(workspaceId: string, userId: string): Promise<boolean> {

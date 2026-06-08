@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { clampLimit, safeOffset } from '../lib/pagination';
 import type {
   ComplianceItem,
   CreateComplianceItemInput,
@@ -51,12 +52,16 @@ function toItem(row: ComplianceRow): ComplianceItem {
   };
 }
 
-export async function findAllByWorkspace(workspaceId: string, includeInactive = false): Promise<ComplianceItem[]> {
+export async function findAllByWorkspace(
+  workspaceId: string,
+  includeInactive = false,
+  opts: { limit?: number; offset?: number } = {}
+): Promise<ComplianceItem[]> {
   const { rows } = await pool.query<ComplianceRow>(
     `SELECT *, ${OVERDUE_EXPR} FROM compliance_items
      WHERE workspace_id = $1 ${includeInactive ? '' : 'AND is_active = TRUE'}
-     ORDER BY due_date ASC`,
-    [workspaceId]
+     ORDER BY due_date ASC LIMIT $2 OFFSET $3`,
+    [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
   return rows.map(toItem);
 }

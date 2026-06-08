@@ -1,18 +1,27 @@
-import { Router, Request, Response, CookieOptions } from 'express';
+import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { google } from 'googleapis';
 import * as userModel from '../models/user';
 import * as workspaceModel from '../models/workspace.model';
 import { signToken } from '../services/auth.service';
+import { authCookieOptions } from '../lib/cookie';
 import { pool } from '../db';
 
 const router = Router();
 
-const COOKIE_OPTIONS: CookieOptions = {
+// Short-lived cookie holding the OAuth CSRF state nonce (must survive the Google
+// redirect → SameSite=lax; cleared right after the callback validates it).
+const OAUTH_STATE_COOKIE = 'oauth_state';
+const oauthStateCookieOpts = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 10 * 60 * 1000, // 10 minutes
 };
+
+// 'strict' previously could drop the cookie across the OAuth redirect chain;
+// the shared helper defaults to 'lax' (correct for OAuth) and is env-tunable.
+const COOKIE_OPTIONS = authCookieOptions();
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -25,18 +34,29 @@ function getOAuth2Client() {
 // GET /auth/google — redirect user to Google consent screen
 router.get('/google', (_req: Request, res: Response) => {
   const oauth2 = getOAuth2Client();
+  // CSRF protection: random state echoed by Google + stored in a cookie we verify.
+  const state = crypto.randomBytes(16).toString('hex');
+  res.cookie(OAUTH_STATE_COOKIE, state, oauthStateCookieOpts);
   const url = oauth2.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'email', 'profile'],
     prompt: 'select_account',
+    state,
   });
   res.redirect(url);
 });
 
 // GET /auth/google/callback — Google redirects here after consent
 router.get('/google/callback', async (req: Request, res: Response) => {
-  const { code, error } = req.query as { code?: string; error?: string };
+  const { code, error, state } = req.query as { code?: string; error?: string; state?: string };
   const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+
+  // Validate the CSRF state before doing anything else; clear the nonce cookie.
+  const cookieState = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
+  res.clearCookie(OAUTH_STATE_COOKIE, { ...oauthStateCookieOpts, maxAge: undefined });
+  if (!state || !cookieState || state !== cookieState) {
+    return res.redirect(`${frontendUrl}/login?error=oauth_state`);
+  }
 
   if (error || !code) {
     return res.redirect(`${frontendUrl}/login?error=oauth_cancelled`);

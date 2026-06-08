@@ -4,6 +4,8 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src/tests'],
   testMatch: ['**/*.test.ts'],
+  // Real-DB tests live in tests/db and run via `npm run test:db` (need Postgres).
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/tests/db/'],
   transform: { '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
   moduleNameMapper: {
     '^../../../src/shared/(.*)$': '<rootDir>/../../src/shared/$1',
