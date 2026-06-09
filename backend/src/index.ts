@@ -41,8 +41,14 @@ const app = express();
 const PORT = process.env.PORT ?? 3001;
 
 app.use(helmet());
+// FRONTEND_URL may be a comma-separated allowlist (e.g. apex + www) so the API
+// accepts requests from every origin the frontend is served on.
+const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true,
 }));
 
