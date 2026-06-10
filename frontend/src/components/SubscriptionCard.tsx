@@ -138,15 +138,21 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
                   </span>
                 )}
                 {sub.website && (
-                  <a
-                    href={/^https?:\/\//.test(sub.website) ? sub.website : `https://${sub.website}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={e => e.stopPropagation()}
-                    className="text-xs text-indigo-600 hover:underline truncate max-w-[140px]"
-                  >
-                    {sub.website.replace(/^https?:\/\//, '')}
-                  </a>
+                  // Linkify only if it looks like a URL/domain; otherwise show the
+                  // reference (tag, address, note) as plain text.
+                  (/^https?:\/\//i.test(sub.website) || (/\.[a-z]{2,}/i.test(sub.website) && !/\s/.test(sub.website))) ? (
+                    <a
+                      href={/^https?:\/\//i.test(sub.website) ? sub.website : `https://${sub.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="text-xs text-indigo-600 hover:underline truncate max-w-[160px]"
+                    >
+                      {sub.website.replace(/^https?:\/\//i, '')}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-gray-500 truncate max-w-[160px]">{sub.website}</span>
+                  )
                 )}
                 {sub.isActive && (
                   <span className={`text-xs font-medium ${urgencyText}`}>
