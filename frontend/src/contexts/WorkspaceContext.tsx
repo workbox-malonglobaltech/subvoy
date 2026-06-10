@@ -31,15 +31,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     const list = await api.get<Workspace[]>('/workspaces');
     setWorkspaces(list);
-    // Keep the stored active id if it's still valid; otherwise default to the
-    // Personal workspace (or the first available).
-    setActiveId(prev => {
-      const valid = prev && list.some(w => w.id === prev)
-        ? prev
-        : (list.find(w => w.type === 'personal') ?? list[0])?.id ?? null;
-      if (valid) writeActiveId(valid);
-      return valid;
-    });
+    // Resolve the active workspace from localStorage (the source of truth across
+    // reloads) — NOT from React state, which is transiently nulled while auth
+    // re-loads after a reload. Reading state here lost the just-selected
+    // workspace and snapped back to Personal. Keep the stored id if still valid;
+    // otherwise default to Personal (or the first workspace).
+    const stored = readActiveId();
+    const valid = stored && list.some(w => w.id === stored)
+      ? stored
+      : (list.find(w => w.type === 'personal') ?? list[0])?.id ?? null;
+    if (valid) writeActiveId(valid);
+    setActiveId(valid);
   }, []);
 
   useEffect(() => {
