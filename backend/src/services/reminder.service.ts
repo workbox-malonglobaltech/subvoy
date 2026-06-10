@@ -92,75 +92,85 @@ export async function runReminderScan(): Promise<void> {
     user_id: string;
     user_email: string;
     user_name: string | null;
+    currency: string;
     monthly_spend: string;
-    budget_limit: string;
+    budget_limits: Record<string, number> | null;
   }
 
+  // Per-currency monthly spend for users with budget alerts on and at least one
+  // currency budget set. Currencies are summed natively (never converted).
   const { rows: budgetRows } = await pool.query<BudgetRow>(`
     SELECT
-      u.id           AS user_id,
-      u.email        AS user_email,
-      u.name         AS user_name,
+      u.id    AS user_id,
+      u.email AS user_email,
+      u.name  AS user_name,
+      s.currency,
       SUM(
         CASE s.billing_cycle
           WHEN 'yearly'  THEN s.amount / 12
           WHEN 'weekly'  THEN s.amount * 52 / 12
           ELSE s.amount
         END
-      )              AS monthly_spend,
-      np.budget_limit
+      ) AS monthly_spend,
+      np.budget_limits
     FROM notification_preferences np
     JOIN users u ON u.id = np.user_id
     JOIN subscriptions s ON s.user_id = np.user_id AND s.is_active = TRUE
     WHERE np.budget_alert_enabled = TRUE
-      AND np.budget_limit IS NOT NULL
-    GROUP BY u.id, u.email, u.name, np.budget_limit
-    HAVING SUM(
-      CASE s.billing_cycle
-        WHEN 'yearly'  THEN s.amount / 12
-        WHEN 'weekly'  THEN s.amount * 52 / 12
-        ELSE s.amount
-      END
-    ) > np.budget_limit
+      AND np.budget_limits <> '{}'::jsonb
+    GROUP BY u.id, u.email, u.name, s.currency, np.budget_limits
   `);
 
+  // Collect, per user, every currency whose native spend exceeds its own budget.
+  interface Exceeded { currency: string; spend: number; limit: number; }
+  const overByUser = new Map<string, { email: string; name: string | null; exceeded: Exceeded[] }>();
   for (const row of budgetRows) {
-    // Only send once per month — check for an existing budget_alert notification this month
+    const limits = row.budget_limits ?? {};
+    const limit = limits[row.currency];
+    if (!limit) continue;
+    const spend = parseFloat(row.monthly_spend);
+    if (spend <= limit) continue;
+    const entry = overByUser.get(row.user_id)
+      ?? { email: row.user_email, name: row.user_name, exceeded: [] };
+    entry.exceeded.push({ currency: row.currency, spend, limit });
+    overByUser.set(row.user_id, entry);
+  }
+
+  const fmt = (amount: number, currency: string) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+
+  for (const [userId, info] of overByUser) {
+    // Only once per calendar month per user (across all currencies).
     const { rows: existing } = await pool.query(
       `SELECT id FROM notifications
-       WHERE user_id = $1
-         AND type = 'budget_alert'
+       WHERE user_id = $1 AND type = 'budget_alert'
          AND created_at >= date_trunc('month', NOW())`,
-      [row.user_id]
+      [userId]
     );
     if (existing.length > 0) continue;
 
-    const monthlySpend = parseFloat(row.monthly_spend);
-    const budgetLimit  = parseFloat(row.budget_limit);
-    const userName     = row.user_name ?? row.user_email.split('@')[0];
+    const userName = info.name ?? info.email.split('@')[0];
+    const summary = info.exceeded.map(e => `${fmt(e.spend, e.currency)} of ${fmt(e.limit, e.currency)}`).join('; ');
 
-    // In-app notification
     await notifModel.create({
-      userId: row.user_id,
-      title: `Budget exceeded — ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(monthlySpend)} spent this month`,
-      message: `Your monthly subscription spend of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(monthlySpend)} has exceeded your budget of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(budgetLimit)}.`,
+      userId,
+      title: 'Monthly budget exceeded',
+      message: `Your spend has exceeded your budget: ${summary}.`,
       type: 'budget_alert',
     });
 
-    // Email
-    try {
-      await sendBudgetAlertEmail({
-        toEmail: row.user_email,
-        userName,
-        monthlySpend,
-        budgetLimit,
-        currency: 'USD',
-        month,
-      });
-      console.log(`[Reminder] Budget alert sent to ${row.user_email}`);
-    } catch (err) {
-      console.error(`[Reminder] Budget alert email failed for ${row.user_email}:`, err);
+    // One email per over-budget currency (the template is single-currency).
+    for (const e of info.exceeded) {
+      try {
+        await sendBudgetAlertEmail({
+          toEmail: info.email, userName,
+          monthlySpend: e.spend, budgetLimit: e.limit, currency: e.currency, month,
+        });
+      } catch (err) {
+        console.error(`[Reminder] Budget alert email failed for ${info.email}:`, err);
+      }
     }
+    console.log(`[Reminder] Budget alert sent to ${info.email} (${info.exceeded.length} currency/ies)`);
   }
 
   // ── Price change detection ─────────────────────────────────────────────────

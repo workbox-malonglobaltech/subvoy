@@ -7,13 +7,19 @@ import { useToast } from '../contexts/ToastContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NavBar } from '../components/NavBar';
 import { TeamManagement } from '../components/TeamManagement';
+import { useSummary } from '../hooks/useSummary';
+import { SUPPORTED_CURRENCIES } from '../utils/currency';
 
 interface Prefs {
   emailEnabled: boolean;
   daysBefore: number;
   budgetAlertEnabled: boolean;
   budgetLimit: number | null;
+  /** Per-currency monthly budgets, e.g. { NGN: 50000, USD: 200 }. */
+  budgetLimits: Record<string, number>;
 }
+
+const symbolFor = (c: string) => SUPPORTED_CURRENCIES.find(x => x.value === c)?.symbol ?? c;
 
 interface CustomCategory { id: string; name: string; }
 
@@ -24,7 +30,11 @@ export function SettingsPage() {
   const navigate = useNavigate();
 
   // ── Notification prefs ─────────────────────────────────────────────────────
-  const [prefs, setPrefs] = useState<Prefs>({ emailEnabled: true, daysBefore: 3, budgetAlertEnabled: false, budgetLimit: null });
+  const [prefs, setPrefs] = useState<Prefs>({ emailEnabled: true, daysBefore: 3, budgetAlertEnabled: false, budgetLimit: null, budgetLimits: {} });
+  // Currencies the user actually uses (from their subscriptions) → one budget each.
+  const { summary } = useSummary([]);
+  const budgetCurrencies = (summary?.byCurrency ?? []).map(c => c.currency);
+  const currencyList = budgetCurrencies.length ? budgetCurrencies : ['USD'];
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -421,29 +431,39 @@ export function SettingsPage() {
                 </div>
 
                 {prefs.budgetAlertEnabled && (
-                  <div>
-                    <label htmlFor="budget-limit" className="block text-sm font-medium text-gray-700 mb-1">
-                      Budget limit (USD/month)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                      <input
-                        id="budget-limit"
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={prefs.budgetLimit ?? ''}
-                        onChange={e => setPrefs(p => ({
-                          ...p,
-                          budgetLimit: e.target.value === '' ? null : parseFloat(e.target.value),
-                        }))}
-                        placeholder="e.g. 100"
-                        className="w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      We'll alert you once per month if your total exceeds this amount.
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-500">
+                      Set a monthly limit per currency. We alert you once a month if your spend in that
+                      currency exceeds it — each currency is tracked on its own (no conversion).
                     </p>
+                    {currencyList.map(cur => (
+                      <div key={cur}>
+                        <label htmlFor={`budget-${cur}`} className="block text-sm font-medium text-gray-700 mb-1">
+                          Budget ({cur}/month)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{symbolFor(cur)}</span>
+                          <input
+                            id={`budget-${cur}`}
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={prefs.budgetLimits?.[cur] ?? ''}
+                            onChange={e => {
+                              const v = e.target.value;
+                              setPrefs(p => {
+                                const next = { ...(p.budgetLimits ?? {}) };
+                                if (v === '' || !(parseFloat(v) > 0)) delete next[cur];
+                                else next[cur] = parseFloat(v);
+                                return { ...p, budgetLimits: next };
+                              });
+                            }}
+                            placeholder="e.g. 100"
+                            className="w-full rounded-lg border border-gray-300 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
