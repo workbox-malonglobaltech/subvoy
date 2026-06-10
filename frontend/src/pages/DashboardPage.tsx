@@ -47,7 +47,10 @@ export function DashboardPage() {
   const { user } = useAuth();
   const toast = useToast();
   const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, refetch } = useSubscriptions(true);
-  const { summary, loading: sumLoading } = useSummary([subscriptions.length]);
+  // Bump on any mutation so the summary refetches — count alone misses edits.
+  const [summaryKey, setSummaryKey] = useState(0);
+  const refreshSummary = () => setSummaryKey(k => k + 1);
+  const { summary, loading: sumLoading } = useSummary([summaryKey]);
   const { rates: fxRates, stale: fxStale, ngnRateChangePct } = useFxRates();
   const { wallet, loading: walletLoading } = useWallet();
   const { data: analyticsData } = useAnalytics();
@@ -187,6 +190,7 @@ export function DashboardPage() {
     setBulkDeleting(true);
     try {
       await bulkDelete(Array.from(selected));
+      refreshSummary();
       toast.success(`${selected.size} subscription${selected.size !== 1 ? 's' : ''} paused`);
       exitSelectMode();
     } catch {
@@ -210,6 +214,7 @@ export function DashboardPage() {
       setSavedId(saved.id);
       setTimeout(() => setSavedId(null), 1400);
     }
+    refreshSummary(); // refresh totals after add/edit
   }
 
   async function handleDelete(id: string) {
@@ -220,6 +225,7 @@ export function DashboardPage() {
     await new Promise(r => setTimeout(r, 220));
     try {
       await remove(id);
+      refreshSummary();
       toast.success('Subscription removed');
     } catch {
       // Restore the card if the API call fails
@@ -230,11 +236,13 @@ export function DashboardPage() {
 
   async function handleArchive(id: string) {
     await archive(id);
+    refreshSummary();
     toast.success('Subscription paused');
   }
 
   async function handleRestore(id: string) {
     await restore(id);
+    refreshSummary();
     toast.success('Subscription restored');
   }
 
@@ -250,6 +258,7 @@ export function DashboardPage() {
       {}
     );
     await refetch();
+    refreshSummary();
     toast.success('Payment recorded — next billing date updated');
     setPayConfirm(null);
   }

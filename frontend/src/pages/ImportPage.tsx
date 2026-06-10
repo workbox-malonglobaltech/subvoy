@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, authHeaders } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 import { NavBar } from '../components/NavBar';
 
@@ -66,11 +66,14 @@ export function ImportPage() {
     formData.append('file', file);
 
     try {
-      // Use VITE_API_URL so this works in non-proxy deployments too
+      // Use VITE_API_URL so this works in non-proxy deployments too.
+      // Attach auth + workspace headers manually (this bypasses apiFetch so the
+      // browser can set the multipart boundary). Don't set Content-Type.
       const BASE_URL = import.meta.env.VITE_API_URL ?? '';
       const res = await fetch(`${BASE_URL}/imports/csv`, {
         method: 'POST',
         credentials: 'include',
+        headers: await authHeaders(),
         body: formData,
       });
       const json = await res.json();
