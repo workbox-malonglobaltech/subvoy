@@ -14,30 +14,44 @@ const PAYSTACK_ENABLED = Boolean(import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
 const MOCK_RATE = 1600; // ₦1,600 per $1 — kept in sync with backend
 
 export function TopUpModal({ onClose, onSubmit }: Props) {
-  const [amountNgn, setAmountNgn]         = useState('');
+  // `amount` is entered in the SELECTED destination's currency: ₦ for NGN, $ for
+  // USD. The wallet is funded via the naira rail (Paystack), so we always send the
+  // naira charge to the backend — for USD we convert the entered dollars at the rate.
+  const [amount, setAmount]               = useState('');
   const [destination, setDestination]     = useState<'ngn' | 'usd'>('usd');
   const [fundingSource, setFundingSource] = useState('GTBank');
   const [submitting, setSubmitting]       = useState(false);
   const [error, setError]                 = useState<string | null>(null);
 
-  const parsedNgn  = parseFloat(amountNgn) || 0;
-  const usdEstimate = destination === 'usd' && parsedNgn > 0
-    ? (parsedNgn / MOCK_RATE).toFixed(2)
+  const isUsd = destination === 'usd';
+  const parsed = parseFloat(amount) || 0;
+  // The naira amount actually charged (USD entries convert at the mock rate).
+  const chargeNgn = isUsd ? Math.round(parsed * MOCK_RATE) : parsed;
+  const conversionNote = parsed > 0
+    ? (isUsd
+        ? `You'll be charged ≈ ₦${chargeNgn.toLocaleString()} at ₦${MOCK_RATE.toLocaleString()}/$`
+        : `≈ $${(parsed / MOCK_RATE).toFixed(2)} USD at ₦${MOCK_RATE.toLocaleString()}/$`)
     : null;
+
+  function validate(): string | null {
+    if (!parsed || parsed <= 0) return 'Enter a valid amount';
+    if (chargeNgn < 100) return isUsd ? 'Minimum top-up is about $1' : 'Minimum top-up is ₦100';
+    if (chargeNgn > 10_000_000) return 'Amount is too large';
+    return null;
+  }
 
   // ── Paystack flow ──────────────────────────────────────────────────────────
 
   async function handlePaystack() {
-    const amount = parseFloat(amountNgn);
-    if (!amount || amount < 100) { setError('Minimum top-up is ₦100'); return; }
-    if (amount > 10_000_000)     { setError('Amount cannot exceed ₦10,000,000'); return; }
+    const v = validate();
+    if (v) { setError(v); return; }
 
     setError(null);
     setSubmitting(true);
     try {
       const data = await api.post<{ authorizationUrl: string; reference: string }>(
         '/wallet/topup/initiate',
-        { amountNgn: amount, destination }
+        { amountNgn: chargeNgn, destination }
       );
       // Redirect to Paystack's hosted checkout page
       window.location.href = data.authorizationUrl;
@@ -51,14 +65,13 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
 
   async function handleMock(e: React.FormEvent) {
     e.preventDefault();
-    const amount = parseFloat(amountNgn);
-    if (!amount || amount <= 0)  { setError('Enter a valid amount'); return; }
-    if (amount > 10_000_000)     { setError('Amount cannot exceed ₦10,000,000'); return; }
+    const v = validate();
+    if (v) { setError(v); return; }
 
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmit({ amountNgn: amount, destination, fundingSource });
+      await onSubmit({ amountNgn: chargeNgn, destination, fundingSource });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Top-up failed');
@@ -117,28 +130,26 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
             </div>
           </div>
 
-          {/* Amount */}
+          {/* Amount — entered in the selected destination's currency */}
           <div>
             <label htmlFor="topup-amount" className="block text-sm font-medium text-gray-700 mb-1">
-              Amount (₦)
+              Amount ({isUsd ? '$' : '₦'})
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">₦</span>
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">{isUsd ? '$' : '₦'}</span>
               <input
                 id="topup-amount"
                 type="number"
-                min="100"
+                min="0"
                 step="any"
-                value={amountNgn}
-                onChange={e => setAmountNgn(e.target.value)}
-                placeholder="5,000"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder={isUsd ? '50' : '5,000'}
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
-            {usdEstimate && (
-              <p className="mt-1.5 text-xs text-gray-500">
-                ≈ ${usdEstimate} USD at ₦{MOCK_RATE.toLocaleString()}/$
-              </p>
+            {conversionNote && (
+              <p className="mt-1.5 text-xs text-gray-500">{conversionNote}</p>
             )}
           </div>
 
@@ -169,7 +180,7 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
                 <button
                   type="button"
                   onClick={handlePaystack}
-                  disabled={submitting || !parsedNgn}
+                  disabled={submitting || !parsed}
                   className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {submitting ? (
@@ -179,7 +190,7 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
                     </>
                   ) : (
                     <>
-                      Pay{parsedNgn > 0 ? ` ₦${parsedNgn.toLocaleString()}` : ''} with Paystack
+                      Pay{parsed > 0 ? ` ₦${chargeNgn.toLocaleString()}` : ''} with Paystack
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
