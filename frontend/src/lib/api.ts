@@ -31,6 +31,19 @@ function activeWorkspaceId(): string | null {
   }
 }
 
+/**
+ * Auth + workspace headers for raw fetches that bypass apiFetch (e.g. multipart
+ * file uploads, where we must let the browser set the multipart boundary).
+ */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const wsId = activeWorkspaceId();
+  return {
+    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    ...(wsId ? { 'X-Workspace-Id': wsId } : {}),
+  };
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
