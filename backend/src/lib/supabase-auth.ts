@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import * as userModel from '../models/user';
 import * as workspaceModel from '../models/workspace.model';
+import { sendWelcomeEmail } from '../services/email.service';
 import type { User } from '../../../src/shared/types';
 
 export function isSupabaseAuthEnabled(): boolean {
@@ -116,5 +117,9 @@ export async function resolveDomainUser(identity: SupabaseIdentity): Promise<Use
     email: identity.email, name: identity.name, authUserId: identity.supabaseUserId,
   });
   await workspaceModel.ensurePersonalWorkspace(user.id);
+  // First-time signup → send the welcome email. Fire-and-forget: never block or
+  // fail provisioning if email delivery hiccups.
+  sendWelcomeEmail({ to: user.email, name: user.name ?? user.email.split('@')[0] })
+    .catch(err => console.error('Welcome email failed:', err));
   return user;
 }
