@@ -24,6 +24,8 @@ const createSchema = z.object({
   billingCycle: billingCycleEnum,
   nextBillingDate: z.string().regex(dateRegex, 'Date must be YYYY-MM-DD'),
   category: z.string().max(100).optional(),
+  service: z.string().max(120).optional(),
+  website: z.string().max(255).optional(),
   // HTTPS-only to prevent protocol confusion and future SSRF if backend ever fetches logos
   logoUrl: z.string().url().refine(u => u.startsWith('https://'), {
     message: 'Logo URL must use HTTPS',

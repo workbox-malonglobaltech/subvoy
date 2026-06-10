@@ -23,6 +23,8 @@ interface Props {
 export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurrency }: Props) {
   const { rates: fxRates } = useFxRates();
   const [name, setName] = useState('');
+  const [service, setService] = useState('');
+  const [website, setWebsite] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
@@ -41,6 +43,8 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
   useEffect(() => {
     if (initial) {
       setName(initial.name);
+      setService(initial.service ?? '');
+      setWebsite(initial.website ?? '');
       setAmount(String(initial.amount));
       setCurrency(initial.currency);
       setBillingCycle(initial.billingCycle);
@@ -50,7 +54,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
       setAutopay(initial.autopay);
       setAutopayMax(initial.autopayMaxAmount != null ? String(initial.autopayMaxAmount) : '');
     } else {
-      setName(''); setAmount(''); setCurrency(defaultCurrency ?? 'USD');
+      setName(''); setService(''); setWebsite(''); setAmount(''); setCurrency(defaultCurrency ?? 'USD');
       setBillingCycle('monthly'); setNextBillingDate(''); setCategory(''); setNotes('');
       setAutopay(false); setAutopayMax('');
     }
@@ -105,6 +109,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
       await onSave({
         name, amount: parsed, currency, billingCycle, nextBillingDate,
         category: category || undefined, notes: notes || undefined,
+        service: service.trim() || undefined, website: website.trim() || undefined,
         autopay, autopayMaxAmount,
       });
       onClose();
@@ -153,14 +158,42 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label htmlFor="sub-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Service name
+                Service name <span className="text-gray-400 font-normal">(business, e.g. Namecheap)</span>
               </label>
               <input
                 id="sub-name"
                 required
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Netflix, Spotify..."
+                placeholder="Namecheap, Netflix, Spotify…"
+                maxLength={255}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sub-service" className="block text-sm font-medium text-gray-700 mb-1">
+                Service <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="sub-service"
+                value={service}
+                onChange={e => setService(e.target.value)}
+                placeholder="Hosting, Streaming…"
+                maxLength={120}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sub-website" className="block text-sm font-medium text-gray-700 mb-1">
+                Website <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="sub-website"
+                value={website}
+                onChange={e => setWebsite(e.target.value)}
+                placeholder="namecheap.com"
                 maxLength={255}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />

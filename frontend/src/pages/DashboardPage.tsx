@@ -157,11 +157,20 @@ export function DashboardPage() {
     else if (activeTab === 'paused') base = paused;
     else base = active;
 
-    return base.filter(s => {
+    const result = base.filter(s => {
       const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' || s.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
+
+    // Group same-name subscriptions together (alphabetical) on the All/Paused
+    // lists for easy access; keep due-date order on Upcoming/Overdue.
+    if (activeTab === 'all' || activeTab === 'paused') {
+      result.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        || new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
+    }
+    return result;
   }, [subscriptions, activeTab, upcoming, overdue, paused, active, search, categoryFilter]);
 
   function openAdd() { setEditing(null); setModalOpen(true); }
