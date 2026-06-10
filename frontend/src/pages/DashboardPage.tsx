@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useCompliance } from '../hooks/useCompliance';
 import { useToast } from '../contexts/ToastContext';
 import { NavBar } from '../components/NavBar';
 import { EmptyState } from '../components/EmptyState';
@@ -38,8 +40,12 @@ type Tab = 'all' | 'overdue' | 'upcoming' | 'paused';
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { active: activeWorkspace } = useWorkspace();
   const toast = useToast();
   const navigate = useNavigate();
+  // Business workspaces track compliance too — show it alongside subscriptions.
+  const isBusiness = activeWorkspace?.type === 'business';
+  const { items: complianceItems } = useCompliance(isBusiness);
   const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, refetch } = useSubscriptions(true);
   // Bump on any mutation so the summary refetches — count alone misses edits.
   const [summaryKey, setSummaryKey] = useState(0);
@@ -165,7 +171,7 @@ export function DashboardPage() {
     // lists for easy access; keep due-date order on Upcoming/Overdue.
     if (activeTab === 'all' || activeTab === 'paused') {
       result.sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+        a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
         || new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
     }
     return result;
@@ -587,6 +593,48 @@ export function DashboardPage() {
                 onDismiss={dismissChecklist}
                 onAddSubscription={openAdd}
               />
+            )}
+
+            {/* Compliance — business workspaces track obligations alongside subscriptions */}
+            {isBusiness && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-gray-700">Compliance</h2>
+                  <Link to="/compliance" className="text-xs text-indigo-600 font-medium hover:text-indigo-800">View all →</Link>
+                </div>
+                {complianceItems.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    No obligations yet. <Link to="/compliance" className="text-indigo-600 font-medium hover:text-indigo-800">Add one</Link>
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {[...complianceItems]
+                      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+                      .slice(0, 5)
+                      .map(item => {
+                        const d = daysUntil(item.dueDate);
+                        return (
+                          <li key={item.id} className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate max-w-[140px]">{item.title}</p>
+                              <p className="text-xs text-gray-400 truncate max-w-[140px]">{item.authority ?? 'Obligation'}</p>
+                            </div>
+                            <span className={`text-xs font-medium shrink-0 ${
+                              item.status === 'completed' ? 'text-emerald-600'
+                              : item.overdue ? 'text-red-600'
+                              : d <= 7 ? 'text-amber-600' : 'text-gray-400'
+                            }`}>
+                              {item.status === 'completed' ? 'Done'
+                                : item.overdue ? `${Math.abs(d)}d overdue`
+                                : d === 0 ? 'Due today'
+                                : `In ${d}d`}
+                            </span>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                )}
+              </div>
             )}
 
             <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
