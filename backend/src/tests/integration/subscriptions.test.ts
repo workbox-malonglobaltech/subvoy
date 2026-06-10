@@ -89,12 +89,11 @@ const subRow = {
   updated_at: new Date('2026-04-01T00:00:00Z'),
 };
 
-const summaryStatsRow = {
-  total_monthly: '15.99',
-  total_yearly: '191.88',
-  active_count: '1',
-  due_7_days: '0',
-  due_30_days: '1',
+const summaryCurrencyRow = {
+  currency: 'USD', monthly: '15.99', yearly: '191.88', count: '1',
+};
+const summaryCountsRow = {
+  active_count: '1', due_7_days: '0', due_30_days: '1',
 };
 
 const summaryCategoryRow = {
@@ -389,10 +388,11 @@ describe('DELETE /subscriptions/:id', () => {
 // ---------------------------------------------------------------------------
 
 describe('GET /subscriptions/summary', () => {
-  it('returns 200 with spend summary and category breakdown', async () => {
-    // Route issues two queries: stats + category breakdown
+  it('returns 200 with per-currency spend and category breakdown', async () => {
+    // Route issues three queries: per-currency, counts, category breakdown
     mockQuery
-      .mockResolvedValueOnce({ rows: [summaryStatsRow] })
+      .mockResolvedValueOnce({ rows: [summaryCurrencyRow] })
+      .mockResolvedValueOnce({ rows: [summaryCountsRow] })
       .mockResolvedValueOnce({ rows: [summaryCategoryRow] });
 
     const res = await request(app).get('/subscriptions/summary');
@@ -402,32 +402,23 @@ describe('GET /subscriptions/summary', () => {
     expect(res.body.error).toBeNull();
 
     const { data } = res.body;
-    expect(data).toHaveProperty('monthlySpend');
-    expect(data).toHaveProperty('yearlySpend');
-    expect(data).toHaveProperty('activeCount');
-    expect(data).toHaveProperty('due7Days');
-    expect(data).toHaveProperty('due30Days');
-    expect(data).toHaveProperty('byCategory');
-
-    expect(data.monthlySpend).toBe(15.99);
-    expect(data.yearlySpend).toBe(191.88);
+    expect(Array.isArray(data.byCurrency)).toBe(true);
+    expect(data.byCurrency[0]).toMatchObject({ currency: 'USD', monthlySpend: 15.99, yearlySpend: 191.88, count: 1 });
     expect(data.activeCount).toBe(1);
     expect(data.due7Days).toBe(0);
-    expect(Array.isArray(data.byCategory)).toBe(true);
     expect(data.byCategory[0]).toMatchObject({ category: 'Entertainment', total: 15.99 });
   });
 
-  it('returns 200 with zeroed values when the user has no active subscriptions', async () => {
+  it('returns 200 with empty/zeroed values when the user has no active subscriptions', async () => {
     mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ total_monthly: '0', total_yearly: '0', active_count: '0', due_7_days: '0', due_30_days: '0' }],
-      })
-      .mockResolvedValueOnce({ rows: [] }); // no categories
+      .mockResolvedValueOnce({ rows: [] })                                                  // no currencies
+      .mockResolvedValueOnce({ rows: [{ active_count: '0', due_7_days: '0', due_30_days: '0' }] })
+      .mockResolvedValueOnce({ rows: [] });                                                 // no categories
 
     const res = await request(app).get('/subscriptions/summary');
 
     expect(res.status).toBe(200);
-    expect(res.body.data.monthlySpend).toBe(0);
+    expect(res.body.data.byCurrency).toEqual([]);
     expect(res.body.data.activeCount).toBe(0);
     expect(res.body.data.byCategory).toEqual([]);
   });

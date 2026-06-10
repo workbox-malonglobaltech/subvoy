@@ -40,29 +40,26 @@ router.get('/summary', async (req: Request, res: Response) => {
   try {
     const workspaceId = req.workspace!.id;
 
-    // Query 1: overall spend + counts
-    const { rows: [stats] } = await pool.query<{
-      total_monthly: string;
-      total_yearly: string;
-      active_count: string;
-      due_7_days: string;
-      due_30_days: string;
-    }>(
+    // Query 1: per-currency native spend — each currency summed on its own, NOT
+    // converted (₦ subs → ₦ total, $ subs → $ total). Ordered by monthly desc so
+    // the primary currency comes first.
+    const { rows: curRows } = await pool.query<{ currency: string; monthly: string; yearly: string; count: string }>(
+      `SELECT currency,
+        COALESCE(SUM(CASE billing_cycle
+          WHEN 'monthly' THEN amount WHEN 'weekly' THEN amount * 4.33 WHEN 'yearly' THEN amount / 12 END), 0)::text AS monthly,
+        COALESCE(SUM(CASE billing_cycle
+          WHEN 'monthly' THEN amount * 12 WHEN 'weekly' THEN amount * 52 WHEN 'yearly' THEN amount END), 0)::text AS yearly,
+        COUNT(*)::text AS count
+      FROM subscriptions
+      WHERE workspace_id = $1 AND is_active = TRUE
+      GROUP BY currency
+      ORDER BY 2 DESC`,
+      [workspaceId]
+    );
+
+    // Query 2: global counts (currency-agnostic).
+    const { rows: [counts] } = await pool.query<{ active_count: string; due_7_days: string; due_30_days: string }>(
       `SELECT
-        COALESCE(SUM(
-          CASE billing_cycle
-            WHEN 'monthly' THEN amount
-            WHEN 'weekly'  THEN amount * 4.33
-            WHEN 'yearly'  THEN amount / 12
-          END
-        ), 0) AS total_monthly,
-        COALESCE(SUM(
-          CASE billing_cycle
-            WHEN 'monthly' THEN amount * 12
-            WHEN 'weekly'  THEN amount * 52
-            WHEN 'yearly'  THEN amount
-          END
-        ), 0) AS total_yearly,
         COUNT(*)::text AS active_count,
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '7 days')::text  AS due_7_days,
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '30 days')::text AS due_30_days
@@ -71,7 +68,7 @@ router.get('/summary', async (req: Request, res: Response) => {
       [workspaceId]
     );
 
-    // Query 2: category breakdown (simple GROUP BY — no window functions)
+    // Query 3: category breakdown (native amount; primary currency dominates if mixed).
     const { rows: catRows } = await pool.query<{ category: string; total: string }>(
       `SELECT
         COALESCE(category, 'Uncategorized') AS category,
@@ -86,12 +83,16 @@ router.get('/summary', async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       data: {
-        monthlySpend: parseFloat(stats.total_monthly),
-        yearlySpend:  parseFloat(stats.total_yearly),
-        activeCount:  parseInt(stats.active_count, 10),
-        due7Days:     parseInt(stats.due_7_days, 10),
-        due30Days:    parseInt(stats.due_30_days, 10),
-        byCategory:   catRows.map(r => ({ category: r.category, total: parseFloat(r.total) })),
+        byCurrency: curRows.map(r => ({
+          currency: r.currency,
+          monthlySpend: parseFloat(r.monthly),
+          yearlySpend: parseFloat(r.yearly),
+          count: parseInt(r.count, 10),
+        })),
+        activeCount: parseInt(counts?.active_count ?? '0', 10),
+        due7Days:    parseInt(counts?.due_7_days ?? '0', 10),
+        due30Days:   parseInt(counts?.due_30_days ?? '0', 10),
+        byCategory:  catRows.map(r => ({ category: r.category, total: parseFloat(r.total) })),
       },
       error: null,
     });
