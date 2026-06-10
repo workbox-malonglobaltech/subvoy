@@ -219,6 +219,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
                     onClick={() => onArchive(sub.id)}
                     className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
                     aria-label={`Pause ${sub.name}`}
+                    title="Pause stops reminders & autopay and excludes it from spend totals — but keeps the record and history. Resume anytime."
                   >
                     Pause
                   </button>
