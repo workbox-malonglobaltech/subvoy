@@ -83,7 +83,7 @@ export async function create(
     `INSERT INTO compliance_items
        (workspace_id, user_id, title, description, authority, reference_number, jurisdiction,
         cadence, due_date, reminder_offsets, penalty_note, assignee_user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, '{30,7,1}'), $11, $12)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::integer[], '{30,7,1}'::integer[]), $11, $12)
      RETURNING *, ${OVERDUE_EXPR}`,
     [
       workspaceId,
