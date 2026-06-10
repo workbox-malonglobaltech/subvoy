@@ -136,13 +136,11 @@ export function DashboardPage() {
       ? <span>—</span>
       : <>{byCurrency.map(c => <div key={c.currency}>{formatNative(c[kind], c.currency)}</div>)}</>;
 
-  // ── Budget bar (tracks the primary currency's monthly spend) ──────────────────
-  const budgetPct = useMemo(() => {
-    if (!notifPrefs?.budgetAlertEnabled || !notifPrefs.budgetLimit) return null;
-    const primaryMonthly = summary?.byCurrency?.[0]?.monthlySpend;
-    if (primaryMonthly == null) return null;
-    return (primaryMonthly / notifPrefs.budgetLimit) * 100;
-  }, [notifPrefs, summary]);
+  // ── Budget bars — one per currency that has a budget set (native, no conversion) ──
+  const budgetBars = (notifPrefs?.budgetAlertEnabled ? byCurrency : [])
+    .map(c => ({ currency: c.currency, spend: c.monthlySpend, limit: notifPrefs?.budgetLimits?.[c.currency] ?? 0 }))
+    .filter(c => c.limit > 0)
+    .map(c => ({ ...c, pct: (c.spend / c.limit) * 100 }));
 
   const daysLeftInMonth = useMemo(() => {
     const now = new Date();
@@ -356,32 +354,36 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Budget progress bar — tracks the primary currency's monthly spend */}
-        {budgetPct !== null && notifPrefs?.budgetLimit && primary && (
-          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly budget</p>
-              <p className="text-sm font-semibold text-gray-900">
-                {formatNative(primary.monthlySpend, primary.currency)}
-                <span className="text-gray-400 font-normal"> of {formatNative(notifPrefs.budgetLimit, primary.currency)}</span>
-              </p>
-            </div>
-            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  budgetPct >= 100 ? 'bg-red-500' :
-                  budgetPct >= 75  ? 'bg-amber-400' : 'bg-emerald-500'
-                }`}
-                style={{ width: `${Math.min(budgetPct, 100)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1.5">
-              {Math.round(budgetPct)}% used
-              {budgetPct >= 100
-                ? ' — budget exceeded'
-                : ` · ${formatNative(notifPrefs.budgetLimit - primary.monthlySpend, primary.currency)} remaining · ${daysLeftInMonth}d left this month`
-              }
-            </p>
+        {/* Budget progress bars — one per currency with a budget set (no conversion) */}
+        {budgetBars.length > 0 && (
+          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm space-y-4">
+            {budgetBars.map(b => (
+              <div key={b.currency}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly budget · {b.currency}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatNative(b.spend, b.currency)}
+                    <span className="text-gray-400 font-normal"> of {formatNative(b.limit, b.currency)}</span>
+                  </p>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      b.pct >= 100 ? 'bg-red-500' :
+                      b.pct >= 75  ? 'bg-amber-400' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(b.pct, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  {Math.round(b.pct)}% used
+                  {b.pct >= 100
+                    ? ' — budget exceeded'
+                    : ` · ${formatNative(b.limit - b.spend, b.currency)} remaining · ${daysLeftInMonth}d left this month`
+                  }
+                </p>
+              </div>
+            ))}
           </div>
         )}
 

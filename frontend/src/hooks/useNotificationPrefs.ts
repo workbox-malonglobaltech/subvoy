@@ -6,6 +6,8 @@ export interface NotificationPrefs {
   daysBefore: number;
   budgetAlertEnabled: boolean;
   budgetLimit: number | null;
+  /** Per-currency monthly budgets, e.g. { NGN: 50000, USD: 200 }. */
+  budgetLimits: Record<string, number>;
 }
 
 /**
