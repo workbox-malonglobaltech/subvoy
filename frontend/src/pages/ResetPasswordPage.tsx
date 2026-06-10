@@ -1,16 +1,33 @@
-import { useState, FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') ?? '';
   const navigate = useNavigate();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // Supabase consumes the recovery token from the URL hash and establishes a
+  // short-lived session (detectSessionInUrl). We require that session to reset.
+  const [ready, setReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // PASSWORD_RECOVERY fires when arriving via the email link; also check any
+    // already-established session in case the event fired before mount.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!cancelled && (event === 'PASSWORD_RECOVERY' || session)) setReady(true);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled && data.session) setReady(true);
+      else if (!cancelled) setTimeout(() => setReady(r => r ?? false), 1500);
+    });
+    return () => { cancelled = true; sub.subscription.unsubscribe(); };
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -23,13 +40,9 @@ export function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const res = await fetch('/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Reset failed');
+      const { error: err } = await supabase.auth.updateUser({ password: newPassword });
+      if (err) throw new Error(err.message);
+      await supabase.auth.signOut();
       setDone(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
@@ -39,11 +52,11 @@ export function ResetPasswordPage() {
     }
   }
 
-  if (!token) {
+  if (ready === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-          <p className="text-sm text-red-600 mb-4">Invalid or missing reset link.</p>
+          <p className="text-sm text-red-600 mb-4">This reset link is invalid or has expired.</p>
           <Link to="/forgot-password" className="text-indigo-600 text-sm font-medium hover:text-indigo-800">
             Request a new one →
           </Link>
@@ -93,16 +106,22 @@ export function ResetPasswordPage() {
                   <label htmlFor="rp-password" className="block text-sm font-medium text-gray-700 mb-1">
                     New password
                   </label>
-                  <input
-                    id="rp-password"
-                    type="password"
-                    required
-                    autoFocus
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="••••••••••"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <div className="relative">
+                    <input
+                      id="rp-password"
+                      type={show ? 'text' : 'password'}
+                      required
+                      autoFocus
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="••••••••••"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button type="button" onClick={() => setShow(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-gray-700">
+                      {show ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -111,7 +130,7 @@ export function ResetPasswordPage() {
                   </label>
                   <input
                     id="rp-confirm"
-                    type="password"
+                    type={show ? 'text' : 'password'}
                     required
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}

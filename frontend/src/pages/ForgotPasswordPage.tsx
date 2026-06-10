@@ -1,5 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -12,13 +13,12 @@ export function ForgotPasswordPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      // Supabase sends the reset email (via our configured SMTP) with a recovery
+      // link back to /reset-password. It never reveals whether the email exists.
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Request failed');
+      if (error) throw new Error(error.message);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
