@@ -247,6 +247,10 @@ export interface Subscription {
   billingCycle: BillingCycle;
   nextBillingDate: string;
   category: string | null;
+  /** What the subscription provides, e.g. "Hosting" */
+  service: string | null;
+  /** The service's web address, e.g. "namecheap.com" */
+  website: string | null;
   logoUrl: string | null;
   notes: string | null;
   isActive: boolean;
@@ -265,6 +269,8 @@ export interface CreateSubscriptionInput {
   billingCycle: BillingCycle;
   nextBillingDate: string;
   category?: string;
+  service?: string;
+  website?: string;
   logoUrl?: string;
   notes?: string;
   autopay?: boolean;
@@ -278,6 +284,8 @@ export interface UpdateSubscriptionInput {
   billingCycle?: BillingCycle;
   nextBillingDate?: string;
   category?: string;
+  service?: string;
+  website?: string;
   logoUrl?: string;
   notes?: string;
   isActive?: boolean;

@@ -128,11 +128,25 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
                   </span>
                 )}
               </div>
+              {sub.service && (
+                <p className="text-xs text-gray-500 truncate mt-0.5">{sub.service}</p>
+              )}
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {sub.category && (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor}`}>
                     {sub.category}
                   </span>
+                )}
+                {sub.website && (
+                  <a
+                    href={/^https?:\/\//.test(sub.website) ? sub.website : `https://${sub.website}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="text-xs text-indigo-600 hover:underline truncate max-w-[140px]"
+                  >
+                    {sub.website.replace(/^https?:\/\//, '')}
+                  </a>
                 )}
                 {sub.isActive && (
                   <span className={`text-xs font-medium ${urgencyText}`}>

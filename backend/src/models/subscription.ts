@@ -13,6 +13,8 @@ interface SubscriptionRow {
   billing_cycle: string;
   next_billing_date: Date;
   category: string | null;
+  service: string | null;
+  website: string | null;
   logo_url: string | null;
   notes: string | null;
   is_active: boolean;
@@ -34,6 +36,8 @@ function toSubscription(row: SubscriptionRow): Subscription {
     billingCycle: row.billing_cycle as Subscription['billingCycle'],
     nextBillingDate: row.next_billing_date.toISOString().split('T')[0],
     category: row.category,
+    service: row.service ?? null,
+    website: row.website ?? null,
     logoUrl: row.logo_url,
     notes: row.notes,
     isActive: row.is_active,
@@ -72,8 +76,8 @@ export async function create(
 ): Promise<Subscription> {
   const { rows } = await pool.query<SubscriptionRow>(
     `INSERT INTO subscriptions
-       (workspace_id, user_id, name, amount, currency, billing_cycle, next_billing_date, category, logo_url, notes, autopay, autopay_max_amount)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+       (workspace_id, user_id, name, amount, currency, billing_cycle, next_billing_date, category, service, website, logo_url, notes, autopay, autopay_max_amount)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
     [
       workspaceId,
       userId,
@@ -83,6 +87,8 @@ export async function create(
       data.billingCycle,
       data.nextBillingDate,
       data.category ?? null,
+      data.service ?? null,
+      data.website ?? null,
       data.logoUrl ?? null,
       data.notes ?? null,
       data.autopay ?? false,
@@ -111,6 +117,8 @@ export async function update(
   if (data.billingCycle !== undefined) { fields.push(`billing_cycle = $${idx++}`); values.push(data.billingCycle); }
   if (data.nextBillingDate !== undefined) { fields.push(`next_billing_date = $${idx++}`); values.push(data.nextBillingDate); }
   if (data.category !== undefined) { fields.push(`category = $${idx++}`); values.push(data.category); }
+  if (data.service !== undefined) { fields.push(`service = $${idx++}`); values.push(data.service); }
+  if (data.website !== undefined) { fields.push(`website = $${idx++}`); values.push(data.website); }
   if (data.logoUrl !== undefined) { fields.push(`logo_url = $${idx++}`); values.push(data.logoUrl); }
   if (data.notes !== undefined) { fields.push(`notes = $${idx++}`); values.push(data.notes); }
   if (data.isActive !== undefined) { fields.push(`is_active = $${idx++}`); values.push(data.isActive); }
