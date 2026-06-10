@@ -28,14 +28,6 @@ const COLORS = [
   '#3b82f6', '#ef4444', '#14b8a6', '#f97316', '#84cc16',
 ];
 
-function formatCurrency(amount: number, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 function daysUntil(dateStr: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -136,11 +128,20 @@ export function DashboardPage() {
     return ((thisMo - lastMo) / lastMo) * 100;
   }, [analyticsData]);
 
-  // ── Budget bar ───────────────────────────────────────────────────────────────
+  // Native per-currency spend totals (no conversion). Primary = highest monthly.
+  const byCurrency = summary?.byCurrency ?? [];
+  const primary = byCurrency[0] ?? null;
+  const spendLines = (kind: 'monthlySpend' | 'yearlySpend') =>
+    byCurrency.length === 0
+      ? <span>—</span>
+      : <>{byCurrency.map(c => <div key={c.currency}>{formatNative(c[kind], c.currency)}</div>)}</>;
+
+  // ── Budget bar (tracks the primary currency's monthly spend) ──────────────────
   const budgetPct = useMemo(() => {
     if (!notifPrefs?.budgetAlertEnabled || !notifPrefs.budgetLimit) return null;
-    if (!summary) return null;
-    return (summary.monthlySpend / notifPrefs.budgetLimit) * 100;
+    const primaryMonthly = summary?.byCurrency?.[0]?.monthlySpend;
+    if (primaryMonthly == null) return null;
+    return (primaryMonthly / notifPrefs.budgetLimit) * 100;
   }, [notifPrefs, summary]);
 
   const daysLeftInMonth = useMemo(() => {
@@ -325,27 +326,14 @@ export function DashboardPage() {
           ) : (
             <>
               {[
-                {
-                  label: 'Monthly spend',
-                  value: formatCurrency(summary?.monthlySpend ?? 0),
-                  sub: totalMonthlyNgn !== null ? formatNative(totalMonthlyNgn, 'NGN') : null,
-                  trend: trendPct,
-                },
-                {
-                  label: 'Yearly spend',
-                  value: formatCurrency(summary?.yearlySpend ?? 0),
-                  sub: totalMonthlyNgn !== null ? `${formatNative(totalMonthlyNgn * 12, 'NGN')}/yr` : null,
-                  trend: null as number | null,
-                },
-                { label: 'Active subs',   value: String(summary?.activeCount ?? 0), sub: null, trend: null as number | null },
-                { label: 'Due this week', value: String(summary?.due7Days ?? 0), sub: null, trend: null as number | null },
+                { label: 'Monthly spend', value: spendLines('monthlySpend'), trend: trendPct },
+                { label: 'Yearly spend',  value: spendLines('yearlySpend'),  trend: null as number | null },
+                { label: 'Active subs',   value: String(summary?.activeCount ?? 0), trend: null as number | null },
+                { label: 'Due this week', value: String(summary?.due7Days ?? 0), trend: null as number | null },
               ].map(card => (
                 <div key={card.label} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{card.label}</p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">{card.value}</p>
-                  {card.sub && (
-                    <p className="text-xs text-emerald-600 mt-1">{card.sub}</p>
-                  )}
+                  <div className="mt-2 text-2xl font-bold text-gray-900 leading-tight space-y-0.5">{card.value}</div>
                   {card.trend !== null && (
                     <p className={`text-xs mt-1 flex items-center gap-0.5 font-medium ${
                       card.trend > 0 ? 'text-red-500' : 'text-emerald-600'
@@ -359,14 +347,14 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Budget progress bar — only when the user has configured a budget */}
-        {budgetPct !== null && notifPrefs?.budgetLimit && summary && (
+        {/* Budget progress bar — tracks the primary currency's monthly spend */}
+        {budgetPct !== null && notifPrefs?.budgetLimit && primary && (
           <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly budget</p>
               <p className="text-sm font-semibold text-gray-900">
-                {formatCurrency(summary.monthlySpend)}
-                <span className="text-gray-400 font-normal"> of {formatCurrency(notifPrefs.budgetLimit)}</span>
+                {formatNative(primary.monthlySpend, primary.currency)}
+                <span className="text-gray-400 font-normal"> of {formatNative(notifPrefs.budgetLimit, primary.currency)}</span>
               </p>
             </div>
             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -382,7 +370,7 @@ export function DashboardPage() {
               {Math.round(budgetPct)}% used
               {budgetPct >= 100
                 ? ' — budget exceeded'
-                : ` · ${formatCurrency(notifPrefs.budgetLimit - summary.monthlySpend)} remaining · ${daysLeftInMonth}d left this month`
+                : ` · ${formatNative(notifPrefs.budgetLimit - primary.monthlySpend, primary.currency)} remaining · ${daysLeftInMonth}d left this month`
               }
             </p>
           </div>
@@ -612,7 +600,7 @@ export function DashboardPage() {
                           <Cell key={i} fill={COLORS[i % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                      <Tooltip formatter={(v) => formatNative(Number(v), primary?.currency ?? 'USD')} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="space-y-2 mt-3">
@@ -626,7 +614,7 @@ export function DashboardPage() {
                           />
                           <span className="text-gray-600 truncate max-w-[120px]">{c.category}</span>
                         </div>
-                        <span className="font-medium text-gray-900">{formatCurrency(c.total)}</span>
+                        <span className="font-medium text-gray-900">{formatNative(c.total, primary?.currency ?? 'USD')}</span>
                       </div>
                     ))}
                   </div>
@@ -708,6 +696,7 @@ export function DashboardPage() {
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSave={handleSave}
         initial={editing}
+        defaultCurrency={primary?.currency}
       />
 
       {payConfirm && (

@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
-export interface Summary {
+export interface CurrencyTotal {
+  currency: string;
   monthlySpend: number;
   yearlySpend: number;
+  count: number;
+}
+
+export interface Summary {
+  /** Native per-currency totals — summed independently, never converted. */
+  byCurrency: CurrencyTotal[];
   activeCount: number;
   due7Days: number;
   due30Days: number;
