@@ -16,9 +16,11 @@ interface Props {
   onClose: () => void;
   onSave: (data: CreateSubscriptionInput) => Promise<void>;
   initial?: Subscription | null;
+  /** Default currency for a NEW subscription (the workspace's primary currency). */
+  defaultCurrency?: string;
 }
 
-export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
+export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurrency }: Props) {
   const { rates: fxRates } = useFxRates();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
@@ -48,14 +50,14 @@ export function SubscriptionModal({ open, onClose, onSave, initial }: Props) {
       setAutopay(initial.autopay);
       setAutopayMax(initial.autopayMaxAmount != null ? String(initial.autopayMaxAmount) : '');
     } else {
-      setName(''); setAmount(''); setCurrency('USD');
+      setName(''); setAmount(''); setCurrency(defaultCurrency ?? 'USD');
       setBillingCycle('monthly'); setNextBillingDate(''); setCategory(''); setNotes('');
       setAutopay(false); setAutopayMax('');
     }
     setError('');
     setShowNewCatInput(false);
     setNewCatInput('');
-  }, [initial, open]);
+  }, [initial, open, defaultCurrency]);
 
   useEffect(() => {
     if (!open) return;
