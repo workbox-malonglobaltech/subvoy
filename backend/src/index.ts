@@ -72,13 +72,19 @@ const globalLimiter = rateLimit({
   message: { success: false, data: null, error: 'Too many requests, please try again later.' },
 });
 
-// Strict limiter for auth routes (brute-force protection)
+// Strict limiter for SENSITIVE auth writes (brute-force protection on the legacy
+// login/register/forgot/reset endpoints). Skips /auth/me and /auth/profile —
+// those are session reads/updates the app hits on every page load + login, and
+// throttling them at 10/15min logged real users out mid-session. They remain
+// covered by the global limiter (120/min) and require a valid token anyway.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => isTest,
+  skip: (req) => isTest
+    || req.originalUrl.startsWith('/auth/me')
+    || req.originalUrl.startsWith('/auth/profile'),
   message: { success: false, data: null, error: 'Too many requests, please try again later.' },
 });
 
