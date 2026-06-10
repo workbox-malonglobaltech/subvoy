@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { authenticate } from '../middleware/authenticate';
 import { workspaceContext } from '../middleware/workspaceContext';
-import { parseCSV } from '../services/csv-parser.service';
+import { parseCSV, CsvParseError } from '../services/csv-parser.service';
 import { detectRecurring } from '../services/detection.service';
 import * as detectedModel from '../models/detected-subscription';
 import * as subModel from '../models/subscription';
@@ -55,9 +55,14 @@ router.post('/csv', upload.single('file'), async (req: Request, res: Response) =
       error: null,
     });
   } catch (err) {
-    // Log the full error server-side but never reflect raw parser/library
-    // messages back to the client — they may contain internal column names or paths.
     console.error('CSV import error:', err);
+    // CsvParseError carries a user-safe message (lists the columns we found in
+    // THEIR uploaded file — their own data, not internal details). Anything else
+    // stays generic so we never leak library internals/stack traces.
+    if (err instanceof CsvParseError) {
+      res.status(400).json({ success: false, data: null, error: err.message });
+      return;
+    }
     res.status(400).json({
       success: false,
       data: null,
