@@ -57,15 +57,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const switchWorkspace = useCallback((id: string) => {
     writeActiveId(id);
-    // Full reload is the simplest correct refresh — every workspace-scoped hook
-    // refetches with the new X-Workspace-Id header. (Can be optimised later.)
-    window.location.reload();
+    // Land on the dashboard for the newly-active workspace (full load also
+    // refetches every workspace-scoped hook with the new X-Workspace-Id).
+    window.location.assign('/');
   }, []);
 
   const createBusiness = useCallback(async (name: string, country?: string) => {
     const ws = await api.post<Workspace>('/workspaces', country ? { name, country } : { name });
     writeActiveId(ws.id);
-    window.location.reload();
+    window.location.assign('/'); // open the new workspace's dashboard
     return ws;
   }, []);
 

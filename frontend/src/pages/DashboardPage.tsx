@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { NavBar } from '../components/NavBar';
@@ -20,7 +21,7 @@ import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types
 import { formatNative, toMonthlyNgn, convertAmount } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 
 const COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
@@ -46,6 +47,7 @@ type Tab = 'all' | 'overdue' | 'upcoming' | 'paused';
 export function DashboardPage() {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
   const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, refetch } = useSubscriptions(true);
   // Bump on any mutation so the summary refetches — count alone misses edits.
   const [summaryKey, setSummaryKey] = useState(0);
@@ -208,11 +210,23 @@ export function DashboardPage() {
       setSavedId(saved.id);
       setTimeout(() => setSavedId(null), 1400);
     } else {
-      const saved = await add(data);
-      toast.success('Subscription added');
-      // Flash the newly-added card green briefly
-      setSavedId(saved.id);
-      setTimeout(() => setSavedId(null), 1400);
+      try {
+        const saved = await add(data);
+        toast.success('Subscription added');
+        // Flash the newly-added card green briefly
+        setSavedId(saved.id);
+        setTimeout(() => setSavedId(null), 1400);
+      } catch (err) {
+        // Plan cap reached → close the modal and take them to the upgrade page.
+        if (err instanceof ApiError && err.status === 402) {
+          setModalOpen(false);
+          setEditing(null);
+          toast.info("You've reached your plan limit — here are your upgrade options.");
+          navigate('/plans');
+          return;
+        }
+        throw err; // other errors surface in the modal
+      }
     }
     refreshSummary(); // refresh totals after add/edit
   }
@@ -389,21 +403,29 @@ export function DashboardPage() {
           {/* Subscription list */}
           <div className="lg:col-span-2 space-y-4">
 
-            {/* Search bar */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="search"
-                placeholder="Search subscriptions…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                aria-label="Search subscriptions"
-              />
+            {/* Search bar + quick add */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Search subscriptions…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  aria-label="Search subscriptions"
+                />
+              </div>
+              <button
+                onClick={openAdd}
+                className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              >
+                + Add subscription
+              </button>
             </div>
 
             {/* Category filter pills */}
