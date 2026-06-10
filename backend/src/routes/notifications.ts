@@ -61,6 +61,7 @@ const prefsSchema = z.object({
   daysBefore:         z.number().int().min(1).max(14).optional(),
   budgetAlertEnabled: z.boolean().optional(),
   budgetLimit:        z.number().positive().nullable().optional(),
+  budgetLimits:       z.record(z.string().length(3), z.number().positive()).optional(),
 });
 
 // PUT /notifications/preferences
