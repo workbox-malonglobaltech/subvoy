@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavBar } from '../components/NavBar';
 import { usePlans } from '../hooks/usePlans';
+import { ErrorState } from '../components/ui/ErrorState';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
@@ -47,9 +48,11 @@ export function PlansPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-fg-subtle">Loading…</p>
+          <div className="flex justify-center py-16" role="status" aria-label="Loading plans">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <ErrorState message={error} onRetry={() => window.location.reload()} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {plans.map(p => {
