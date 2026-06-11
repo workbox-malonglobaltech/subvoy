@@ -31,6 +31,8 @@ const createSchema = z.object({
   penaltyNote: z.string().max(1000).optional(),
   penaltyAmount: z.number().positive().nullable().optional(),
   penaltyCurrency: z.string().length(3).optional(),
+  documentPath: z.string().max(500).nullable().optional(),
+  documentName: z.string().max(255).nullable().optional(),
   assigneeUserId: z.string().uuid().nullable().optional(),
 });
 
