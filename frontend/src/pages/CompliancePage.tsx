@@ -7,6 +7,9 @@ import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
 import { formatNative } from '../utils/currency';
 import { supabase } from '../lib/supabase';
+import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorState } from '../components/ui/ErrorState';
+import { Button } from '../components/ui/Button';
 
 async function openDocument(path: string) {
   const { data } = await supabase.storage.from('compliance-docs').createSignedUrl(path, 3600);
@@ -42,7 +45,7 @@ function dueLabel(item: ComplianceItem): { text: string; cls: string } {
 export function CompliancePage() {
   const { active } = useWorkspace();
   const isBusiness = active?.type === 'business';
-  const { items, loading, error, add, update, remove, setStatus } = useCompliance(isBusiness);
+  const { items, loading, error, add, update, remove, setStatus, refetch } = useCompliance(isBusiness);
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ComplianceItem | null>(null);
@@ -117,13 +120,24 @@ export function CompliancePage() {
             </p>
           </div>
         ) : loading ? (
-          <p className="text-sm text-fg-subtle">Loading…</p>
+          <div className="flex justify-center py-16" role="status" aria-label="Loading compliance items">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <ErrorState message={error} onRetry={refetch} />
         ) : sorted.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
-            <p className="text-gray-700 font-medium">No obligations yet</p>
-            <p className="text-sm text-gray-500 mt-1">Add your first filing or renewal deadline.</p>
+          <div className="rounded-2xl border border-dashed border-line-strong bg-surface">
+            <EmptyState
+              icon={(
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              title="No obligations yet"
+              description="Add your first filing or renewal deadline to start tracking compliance."
+              action={<Button onClick={() => { setEditing(null); setModalOpen(true); }}>+ Add obligation</Button>}
+            />
           </div>
         ) : (
           <ul className="space-y-3">
