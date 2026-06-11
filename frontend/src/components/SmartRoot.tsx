@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { LandingPage } from '../pages/LandingPage';
+import { AppShell } from './AppShell';
 
 interface Props {
   /** The authenticated view — rendered when the user is logged in. */
@@ -26,5 +27,5 @@ export function SmartRoot({ children }: Props) {
     return <LandingPage />;
   }
 
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }

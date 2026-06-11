@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useCompliance } from '../hooks/useCompliance';
 import { useToast } from '../contexts/ToastContext';
-import { NavBar } from '../components/NavBar';
 import { EmptyState } from '../components/EmptyState';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { useSummary } from '../hooks/useSummary';
@@ -295,12 +294,14 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar actions={
-        <Button size="sm" onClick={openAdd}>+ Add</Button>
-      } />
-
+    <>
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
+
+        {/* Page header */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-h2 text-fg">Dashboard</h1>
+          <Button size="sm" onClick={openAdd}>+ Add</Button>
+        </div>
 
         {/* Wallet balance widget */}
         <WalletWidget />
@@ -763,6 +764,6 @@ export function DashboardPage() {
           </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 }
