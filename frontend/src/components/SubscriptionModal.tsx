@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Subscription, CreateSubscriptionInput, BillingCycle } from '../../../src/shared/types';
 import { api } from '../lib/api';
 import { useFxRates } from '../hooks/useFxRates';
@@ -37,6 +37,13 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
   const [autopayMax, setAutopayMax] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  // Surface validation errors even when the user submitted from the bottom of a
+  // long form — scroll the error banner into view.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [error]);
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [newCatInput, setNewCatInput] = useState('');
   const [addingCat, setAddingCat] = useState(false);
@@ -126,8 +133,9 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
     <Modal open={open} onClose={onClose} title={initial ? 'Edit Subscription' : 'Add Subscription'}>
         {error && (
           <div
+            ref={errorRef}
             role="alert"
-            className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700"
+            className="mb-4 rounded-lg bg-error-50 border border-error-600/20 px-4 py-2 text-sm text-error-700"
           >
             {error}
           </div>
@@ -135,6 +143,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p className="sm:col-span-2 text-eyebrow uppercase text-fg-subtle">Details</p>
             <div className="sm:col-span-2">
               <label htmlFor="sub-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Service name <span className="text-fg-subtle font-normal">(business, e.g. Namecheap)</span>
@@ -178,6 +187,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
               />
             </div>
 
+            <p className="sm:col-span-2 text-eyebrow uppercase text-fg-subtle mt-2">Billing</p>
             <div>
               <label htmlFor="sub-amount" className="block text-sm font-medium text-gray-700 mb-1">
                 Amount
