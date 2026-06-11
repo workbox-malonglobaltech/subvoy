@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Subscription, FxRates } from '../../../src/shared/types';
+import { daysUntil } from '../lib/date';
 import { getLogoUrls, getInitials, getAvatarColor } from '../utils/logo';
 import { formatNative, formatSubscriptionAmount } from '../utils/currency';
 import { Badge } from './ui/Badge';
@@ -38,13 +39,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Other':          'bg-gray-100 text-gray-600',
 };
 
-function daysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 function normalizeToMonthly(amount: number, cycle: string): number {
   if (cycle === 'yearly')  return amount / 12;
   if (cycle === 'weekly')  return amount * 52 / 12;
@@ -75,7 +69,7 @@ function ServiceLogo({ name }: { name: string }) {
   );
 }
 
-export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, onPay, selectable, selected, onSelect, fxRates, isRemoving, justSaved }: Props) {
+function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onPay, selectable, selected, onSelect, fxRates, isRemoving, justSaved }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [paying, setPaying] = useState(false);
 
@@ -297,3 +291,10 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
     </article>
   );
 }
+
+/**
+ * Memoized — with the dashboard now passing stable callbacks (useCallback) and a
+ * stable `sub`, cards skip re-render on unrelated dashboard state changes
+ * (e.g. typing in search), instead of re-rendering the whole list each keystroke.
+ */
+export const SubscriptionCard = memo(SubscriptionCardImpl);
