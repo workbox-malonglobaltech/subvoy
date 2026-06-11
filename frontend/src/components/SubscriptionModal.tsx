@@ -3,6 +3,7 @@ import { Subscription, CreateSubscriptionInput, BillingCycle } from '../../../sr
 import { api } from '../lib/api';
 import { useFxRates } from '../hooks/useFxRates';
 import { SUPPORTED_CURRENCIES, formatSubscriptionAmount } from '../utils/currency';
+import { Modal } from './ui/Modal';
 
 const BUILTIN_CATEGORIES = [
   'Entertainment', 'Software & SaaS', 'Utilities', 'Health & Fitness',
@@ -91,7 +92,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
     }
   }
 
-  if (!open) return null;
+  // Radix Dialog controls visibility via the `open` prop (handles focus return).
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -121,30 +122,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-5">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
-            {initial ? 'Edit Subscription' : 'Add Subscription'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-            aria-label="Close modal"
-          >
-            &times;
-          </button>
-        </div>
-
+    <Modal open={open} onClose={onClose} title={initial ? 'Edit Subscription' : 'Add Subscription'}>
         {error && (
           <div
             role="alert"
@@ -396,7 +374,6 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
