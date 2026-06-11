@@ -5,6 +5,13 @@ import { useCompliance } from '../hooks/useCompliance';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
+import { formatNative } from '../utils/currency';
+import { supabase } from '../lib/supabase';
+
+async function openDocument(path: string) {
+  const { data } = await supabase.storage.from('compliance-docs').createSignedUrl(path, 3600);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener');
+}
 import {
   ComplianceItem,
   CreateComplianceItemInput,
@@ -146,8 +153,21 @@ export function CompliancePage() {
                           <span>· 👤 {memberNames[item.assigneeUserId]}</span>
                         )}
                       </div>
-                      {item.penaltyNote && (
-                        <p className="text-xs text-red-500 mt-1">Late penalty: {item.penaltyNote}</p>
+                      {(item.penaltyAmount != null || item.penaltyNote) && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Late penalty:{' '}
+                          {item.penaltyAmount != null && formatNative(item.penaltyAmount, item.penaltyCurrency ?? 'USD')}
+                          {item.penaltyAmount != null && item.penaltyNote ? ' — ' : ''}
+                          {item.penaltyNote ?? ''}
+                        </p>
+                      )}
+                      {item.documentPath && (
+                        <button
+                          onClick={() => openDocument(item.documentPath!)}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium mt-1 inline-flex items-center gap-1"
+                        >
+                          📎 {item.documentName ?? 'View document'}
+                        </button>
                       )}
                     </div>
                     <span className="text-xs text-gray-400 shrink-0">

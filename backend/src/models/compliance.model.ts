@@ -20,6 +20,10 @@ interface ComplianceRow {
   reminder_offsets: number[];
   status: ComplianceItem['status'];
   penalty_note: string | null;
+  penalty_amount: string | null;
+  penalty_currency: string | null;
+  document_path: string | null;
+  document_name: string | null;
   is_active: boolean;
   assignee_user_id: string | null;
   overdue: boolean;
@@ -44,6 +48,10 @@ function toItem(row: ComplianceRow): ComplianceItem {
     reminderOffsets: row.reminder_offsets,
     status: row.status,
     penaltyNote: row.penalty_note,
+    penaltyAmount: row.penalty_amount !== null ? parseFloat(row.penalty_amount) : null,
+    penaltyCurrency: row.penalty_currency,
+    documentPath: row.document_path,
+    documentName: row.document_name,
     isActive: row.is_active,
     assigneeUserId: row.assignee_user_id,
     overdue: row.overdue,
@@ -82,8 +90,9 @@ export async function create(
   const { rows } = await pool.query<ComplianceRow>(
     `INSERT INTO compliance_items
        (workspace_id, user_id, title, description, authority, reference_number, jurisdiction,
-        cadence, due_date, reminder_offsets, penalty_note, assignee_user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::integer[], '{30,7,1}'::integer[]), $11, $12)
+        cadence, due_date, reminder_offsets, penalty_note, penalty_amount, penalty_currency,
+        document_path, document_name, assignee_user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::integer[], '{30,7,1}'::integer[]), $11, $12, $13, $14, $15, $16)
      RETURNING *, ${OVERDUE_EXPR}`,
     [
       workspaceId,
@@ -97,6 +106,10 @@ export async function create(
       data.dueDate,
       data.reminderOffsets ?? null,
       data.penaltyNote ?? null,
+      data.penaltyAmount ?? null,
+      data.penaltyCurrency ?? null,
+      data.documentPath ?? null,
+      data.documentName ?? null,
       data.assigneeUserId ?? null,
     ]
   );
@@ -124,6 +137,10 @@ export async function update(
   if (data.reminderOffsets !== undefined) set('reminder_offsets', data.reminderOffsets);
   if (data.status !== undefined) set('status', data.status);
   if (data.penaltyNote !== undefined) set('penalty_note', data.penaltyNote);
+  if (data.penaltyAmount !== undefined) set('penalty_amount', data.penaltyAmount);
+  if (data.penaltyCurrency !== undefined) set('penalty_currency', data.penaltyCurrency);
+  if (data.documentPath !== undefined) set('document_path', data.documentPath);
+  if (data.documentName !== undefined) set('document_name', data.documentName);
   if (data.isActive !== undefined) set('is_active', data.isActive);
   if (data.assigneeUserId !== undefined) set('assignee_user_id', data.assigneeUserId);
 

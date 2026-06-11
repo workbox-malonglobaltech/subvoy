@@ -7,6 +7,10 @@ import {
 } from '../../../src/shared/types';
 import { api } from '../lib/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { SUPPORTED_CURRENCIES } from '../utils/currency';
+import { supabase } from '../lib/supabase';
+
+const DOCS_BUCKET = 'compliance-docs';
 
 interface Props {
   open: boolean;
@@ -41,6 +45,10 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
   const [dueDate, setDueDate] = useState('');
   const [reminderOffsets, setReminderOffsets] = useState('30, 7, 1');
   const [penaltyNote, setPenaltyNote] = useState('');
+  const [penaltyAmount, setPenaltyAmount] = useState('');
+  const [penaltyCurrency, setPenaltyCurrency] = useState('USD');
+  const [file, setFile] = useState<File | null>(null);
+  const [existingDocName, setExistingDocName] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -54,13 +62,17 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
       setDueDate(initial.dueDate);
       setReminderOffsets(initial.reminderOffsets.join(', '));
       setPenaltyNote(initial.penaltyNote ?? '');
+      setPenaltyAmount(initial.penaltyAmount != null ? String(initial.penaltyAmount) : '');
+      setPenaltyCurrency(initial.penaltyCurrency ?? 'USD');
+      setExistingDocName(initial.documentName ?? null);
       setDescription(initial.description ?? '');
       setAssigneeUserId(initial.assigneeUserId ?? '');
     } else {
       setTitle(''); setAuthority(''); setReferenceNumber('');
       setCadence('yearly'); setDueDate(''); setReminderOffsets('30, 7, 1');
-      setPenaltyNote(''); setDescription(''); setAssigneeUserId('');
+      setPenaltyNote(''); setPenaltyAmount(''); setPenaltyCurrency('USD'); setExistingDocName(null); setDescription(''); setAssigneeUserId('');
     }
+    setFile(null);
     setError('');
   }, [initial, open]);
 
@@ -81,6 +93,24 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
     if (!dueDate) { setError('Due date is required'); return; }
     setSaving(true);
     try {
+      // Upload a newly-selected document to Supabase Storage (private bucket).
+      let documentPath = initial?.documentPath ?? undefined;
+      let documentName = initial?.documentName ?? undefined;
+      if (file) {
+        const ext = file.name.includes('.') ? `.${file.name.split('.').pop()}` : '';
+        const path = `${active?.id ?? 'ws'}/${crypto.randomUUID()}${ext}`;
+        const { error: upErr } = await supabase.storage.from(DOCS_BUCKET).upload(path, file, {
+          upsert: false, contentType: file.type || undefined,
+        });
+        if (upErr) {
+          throw new Error(/bucket not found/i.test(upErr.message)
+            ? 'Document storage isn’t set up yet — ask an admin to create the compliance-docs bucket.'
+            : `Upload failed: ${upErr.message}`);
+        }
+        documentPath = path;
+        documentName = file.name;
+      }
+
       await onSave({
         title: title.trim(),
         authority: authority.trim() || undefined,
@@ -89,6 +119,10 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
         dueDate,
         reminderOffsets: parseOffsets(reminderOffsets),
         penaltyNote: penaltyNote.trim() || undefined,
+        penaltyAmount: penaltyAmount.trim() ? parseFloat(penaltyAmount) : null,
+        penaltyCurrency: penaltyAmount.trim() ? penaltyCurrency : undefined,
+        documentPath,
+        documentName,
         description: description.trim() || undefined,
         assigneeUserId: assigneeUserId || null,
       });
@@ -188,12 +222,50 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
           )}
 
           <div>
-            <label htmlFor="c-penalty" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Penalty for late filing <span className="text-gray-400 font-normal">(optional)</span>
             </label>
+            <div className="flex gap-2">
+              <select
+                value={penaltyCurrency}
+                onChange={e => setPenaltyCurrency(e.target.value)}
+                aria-label="Penalty currency"
+                className="rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {SUPPORTED_CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.value}</option>)}
+              </select>
+              <input
+                id="c-penalty-amount"
+                type="number"
+                min={0}
+                step="any"
+                value={penaltyAmount}
+                onChange={e => setPenaltyAmount(e.target.value)}
+                placeholder="Amount, e.g. 50000"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
             <input id="c-penalty" value={penaltyNote} onChange={e => setPenaltyNote(e.target.value)} maxLength={1000}
-              placeholder="e.g. ₦50,000 + ₦5,000/month"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              placeholder="Note (optional) — e.g. + ₦5,000/month after the first month"
+              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div>
+            <label htmlFor="c-doc" className="block text-sm font-medium text-gray-700 mb-1">
+              Document <span className="text-gray-400 font-normal">(optional — PDF or image)</span>
+            </label>
+            <input
+              id="c-doc"
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={e => setFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+            />
+            {file ? (
+              <p className="text-xs text-gray-500 mt-1">Selected: {file.name}</p>
+            ) : existingDocName ? (
+              <p className="text-xs text-gray-500 mt-1">Current: {existingDocName} — choose a file to replace it</p>
+            ) : null}
           </div>
 
           <div>
