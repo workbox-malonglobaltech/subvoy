@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { NavBar } from '../components/NavBar';
 import { ComplianceModal } from '../components/ComplianceModal';
 import { useCompliance } from '../hooks/useCompliance';
 import { useWorkspace } from '../contexts/WorkspaceContext';
@@ -95,21 +94,15 @@ export function CompliancePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar
-        actions={isBusiness ? (
-          <button
-            onClick={() => { setEditing(null); setModalOpen(true); }}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-          >
-            + Add
-          </button>
-        ) : undefined}
-      />
-
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <div className="mb-5">
-          <h1 className="text-xl font-bold text-gray-900">Compliance</h1>
-          <p className="text-sm text-gray-500">Track filings, renewals, and regulatory deadlines.</p>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-h1 text-fg">Compliance</h1>
+            <p className="text-sm text-fg-muted">Track filings, renewals, and regulatory deadlines.</p>
+          </div>
+          {isBusiness && (
+            <Button className="shrink-0" onClick={() => { setEditing(null); setModalOpen(true); }}>+ Add</Button>
+          )}
         </div>
 
         {!isBusiness ? (

@@ -3,7 +3,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useWallet } from '../hooks/useWallet';
 import { TopUpModal } from '../components/TopUpModal';
 import { AutoTopUpPanel } from '../components/AutoTopUpPanel';
-import { NavBar } from '../components/NavBar';
+import { Button } from '../components/ui/Button';
 import type { WalletSettings, WalletTopUpInput } from '../../../src/shared/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -73,20 +73,14 @@ export function WalletPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar actions={
-        <button
-          onClick={() => setTopUpOpen(true)}
-          className="rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-        >
-          + Fund
-        </button>
-      } />
-
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-6 animate-page-enter">
-        {/* ── Page title ──────────────────────────────────────────────────── */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your balances and auto top-up settings</p>
+        {/* ── Page header ─────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-h1 text-fg">Wallet</h1>
+            <p className="text-sm text-fg-muted mt-0.5">Manage your balances and auto top-up settings</p>
+          </div>
+          <Button className="shrink-0" onClick={() => setTopUpOpen(true)}>+ Fund</Button>
         </div>
 
         {/* ── Loading / error states ───────────────────────────────────────── */}

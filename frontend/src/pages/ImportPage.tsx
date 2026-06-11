@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, authHeaders } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
-import { NavBar } from '../components/NavBar';
 
 interface DetectedSub {
   id: string;
@@ -145,19 +144,15 @@ export function ImportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar actions={
-        <Link
-          to="/email-import"
-          className="text-sm text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
-        >
-          Connect Email →
-        </Link>
-      } />
-
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Import from Bank Statement</h1>
-          <p className="mt-1 text-gray-500 text-sm">Upload a CSV export from your bank. We'll detect recurring payments automatically.</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-h1 text-fg">Import from Bank Statement</h1>
+            <p className="mt-1 text-fg-muted text-sm">Upload a CSV export from your bank. We'll detect recurring payments automatically.</p>
+          </div>
+          <Link to="/email-import" className="shrink-0 text-sm text-primary font-medium hover:text-primary-700 transition-colors">
+            Connect Email →
+          </Link>
         </div>
 
         {/* Upload zone */}

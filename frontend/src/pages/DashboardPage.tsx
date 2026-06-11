@@ -298,10 +298,7 @@ export function DashboardPage() {
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
 
         {/* Page header */}
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-h2 text-fg">Dashboard</h1>
-          <Button size="sm" onClick={openAdd}>+ Add</Button>
-        </div>
+        <h1 className="text-h1 text-fg">Dashboard</h1>
 
         {/* Wallet balance widget */}
         <WalletWidget />
