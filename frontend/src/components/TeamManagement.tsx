@@ -143,13 +143,13 @@ export function TeamManagement() {
       {/* Pending invitations */}
       {canManage && invites.length > 0 && (
         <div className="mb-5">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Pending invitations</p>
+          <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wide mb-1">Pending invitations</p>
           <ul className="divide-y divide-gray-100" role="list">
             {invites.map(inv => (
               <li key={inv.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
                   <p className="text-sm text-gray-700 truncate">{inv.email}</p>
-                  <p className="text-xs text-gray-400">Invited as {inv.role} · pending</p>
+                  <p className="text-xs text-fg-subtle">Invited as {inv.role} · pending</p>
                 </div>
                 <button
                   onClick={() => revokeInvite(inv.id)}
@@ -164,14 +164,14 @@ export function TeamManagement() {
       )}
 
       {loading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <p className="text-sm text-fg-subtle">Loading…</p>
       ) : (
         <ul className="divide-y divide-gray-100" role="list">
           {members.map(m => (
             <li key={m.userId} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{m.name ?? m.email}</p>
-                {m.name && <p className="text-xs text-gray-400 truncate">{m.email}</p>}
+                {m.name && <p className="text-xs text-fg-subtle truncate">{m.email}</p>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {m.role === 'owner' || !canManage ? (

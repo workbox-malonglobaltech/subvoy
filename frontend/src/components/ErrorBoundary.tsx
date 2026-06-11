@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {import.meta.env.DEV && this.state.error && (
             <details className="mt-4 max-w-md text-left">
-              <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+              <summary className="text-xs text-fg-subtle cursor-pointer hover:text-gray-600">
                 Error details (dev only)
               </summary>
               <pre className="mt-2 text-xs text-red-600 bg-red-50 rounded-lg p-3 overflow-auto max-h-40 text-left">

@@ -89,7 +89,7 @@ export function PaymentCallbackPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <Link to="/" className="mt-3 block text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <Link to="/" className="mt-3 block text-sm text-fg-subtle hover:text-gray-600 transition-colors">
               Back to Dashboard
             </Link>
           </>
@@ -113,7 +113,7 @@ export function PaymentCallbackPage() {
             >
               Try again
             </Link>
-            <Link to="/" className="mt-3 block text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <Link to="/" className="mt-3 block text-sm text-fg-subtle hover:text-gray-600 transition-colors">
               Back to Dashboard
             </Link>
           </>

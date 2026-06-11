@@ -156,7 +156,7 @@ function SidebarContent({
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg text-fg-subtle hover:text-gray-600 hover:bg-gray-100 transition-colors"
             aria-label="Close navigation"
           >
             <CloseIcon />
@@ -193,7 +193,7 @@ function SidebarContent({
       {/* Footer */}
       <div className="px-3 py-4 border-t border-gray-200 space-y-1">
         {user && (
-          <p className="px-3 py-1 text-xs text-gray-400 truncate" title={user.email}>
+          <p className="px-3 py-1 text-xs text-fg-subtle truncate" title={user.email}>
             {user.email}
           </p>
         )}

@@ -153,7 +153,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="c-authority" className="block text-sm font-medium text-gray-700 mb-1">
-                Authority <span className="text-gray-400 font-normal">(optional)</span>
+                Authority <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <input id="c-authority" value={authority} onChange={e => setAuthority(e.target.value)} maxLength={255}
                 placeholder="e.g. CAC, FIRS, IRS"
@@ -161,7 +161,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
             </div>
             <div>
               <label htmlFor="c-ref" className="block text-sm font-medium text-gray-700 mb-1">
-                Reference # <span className="text-gray-400 font-normal">(optional)</span>
+                Reference # <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <input id="c-ref" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} maxLength={120}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -183,7 +183,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
 
           <div>
             <label htmlFor="c-offsets" className="block text-sm font-medium text-gray-700 mb-1">
-              Remind me (days before) <span className="text-gray-400 font-normal">comma-separated</span>
+              Remind me (days before) <span className="text-fg-subtle font-normal">comma-separated</span>
             </label>
             <input id="c-offsets" value={reminderOffsets} onChange={e => setReminderOffsets(e.target.value)}
               placeholder="30, 7, 1"
@@ -193,7 +193,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
           {members.length > 0 && (
             <div>
               <label htmlFor="c-assignee" className="block text-sm font-medium text-gray-700 mb-1">
-                Assign to <span className="text-gray-400 font-normal">(reminders go to them)</span>
+                Assign to <span className="text-fg-subtle font-normal">(reminders go to them)</span>
               </label>
               <select
                 id="c-assignee"
@@ -211,7 +211,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Penalty for late filing <span className="text-gray-400 font-normal">(optional)</span>
+              Penalty for late filing <span className="text-fg-subtle font-normal">(optional)</span>
             </label>
             <div className="flex gap-2">
               <select
@@ -240,7 +240,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
 
           <div>
             <label htmlFor="c-doc" className="block text-sm font-medium text-gray-700 mb-1">
-              Document <span className="text-gray-400 font-normal">(optional — PDF or image)</span>
+              Document <span className="text-fg-subtle font-normal">(optional — PDF or image)</span>
             </label>
             <input
               id="c-doc"
@@ -258,7 +258,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
 
           <div>
             <label htmlFor="c-desc" className="block text-sm font-medium text-gray-700 mb-1">
-              Notes <span className="text-gray-400 font-normal">(optional)</span>
+              Notes <span className="text-fg-subtle font-normal">(optional)</span>
             </label>
             <textarea id="c-desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} maxLength={2000}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />

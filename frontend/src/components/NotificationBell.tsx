@@ -84,7 +84,7 @@ export function NotificationBell() {
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-gray-400 text-sm">No notifications yet</p>
+                <p className="text-fg-subtle text-sm">No notifications yet</p>
               </div>
             ) : (
               <ul>
@@ -103,7 +103,7 @@ export function NotificationBell() {
                             {n.title}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                          <p className="text-xs text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+                          <p className="text-xs text-fg-subtle mt-1">{timeAgo(n.createdAt)}</p>
                         </div>
                       </div>
                     </button>
@@ -124,7 +124,7 @@ export function NotificationBell() {
             <Link
               to="/settings"
               onClick={() => setOpen(false)}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-fg-subtle hover:text-gray-600 transition-colors"
             >
               Settings
             </Link>

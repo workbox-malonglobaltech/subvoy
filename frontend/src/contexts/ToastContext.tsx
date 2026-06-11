@@ -101,7 +101,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {/* Dismiss button */}
             <button
               onClick={() => dismiss(toast.id)}
-              className="shrink-0 -mt-0.5 -mr-1 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="shrink-0 -mt-0.5 -mr-1 p-1 rounded-lg text-fg-subtle hover:text-gray-600 hover:bg-gray-100 transition-colors"
               aria-label="Dismiss notification"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

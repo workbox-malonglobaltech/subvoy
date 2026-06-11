@@ -42,7 +42,7 @@ export function AutoTopUpPanel({ settings, saving, onChange }: Props) {
               Trigger when USD balance drops below
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">$</span>
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-fg-subtle text-sm">$</span>
               <input
                 type="number"
                 min="1"
@@ -61,7 +61,7 @@ export function AutoTopUpPanel({ settings, saving, onChange }: Props) {
               Amount to pull from bank (NGN)
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">₦</span>
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-fg-subtle text-sm">₦</span>
               <input
                 type="number"
                 min="1"
@@ -78,7 +78,7 @@ export function AutoTopUpPanel({ settings, saving, onChange }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Also top up on day of month
-              <span className="text-gray-400 font-normal ml-1">(optional)</span>
+              <span className="text-fg-subtle font-normal ml-1">(optional)</span>
             </label>
             <select
               value={settings.scheduledDay ?? ''}

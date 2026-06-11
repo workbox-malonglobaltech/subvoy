@@ -47,7 +47,7 @@ export function PlansPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-fg-subtle">Loading…</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : (
@@ -86,10 +86,10 @@ export function PlansPage() {
                     onClick={() => isPaid && upgrade(p)}
                     className={`mt-5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                       isCurrent
-                        ? 'bg-gray-100 text-gray-400 cursor-default'
+                        ? 'bg-gray-100 text-fg-subtle cursor-default'
                         : isPaid
                           ? 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
-                          : 'border border-gray-300 text-gray-400 cursor-default'
+                          : 'border border-gray-300 text-fg-subtle cursor-default'
                     }`}
                   >
                     {isCurrent ? 'Current plan' : isPaid ? (upgrading === p.key ? 'Starting…' : `Upgrade to ${p.displayName}`) : 'Free'}
@@ -100,7 +100,7 @@ export function PlansPage() {
           </div>
         )}
 
-        <p className="mt-6 text-xs text-gray-400">
+        <p className="mt-6 text-xs text-fg-subtle">
           Prices shown are introductory and may change. Billing is being rolled out — your current plan stays active.
         </p>
       </main>

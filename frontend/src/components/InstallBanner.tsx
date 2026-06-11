@@ -79,7 +79,7 @@ export function InstallBanner() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleDismiss}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="text-fg-subtle hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Dismiss install prompt"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

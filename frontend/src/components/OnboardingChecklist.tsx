@@ -92,7 +92,7 @@ export function OnboardingChecklist({
                   {step.label}
                 </p>
                 {!step.done && (
-                  <p className="text-xs text-gray-400 mt-0.5 leading-snug">
+                  <p className="text-xs text-fg-subtle mt-0.5 leading-snug">
                     {step.description}
                   </p>
                 )}

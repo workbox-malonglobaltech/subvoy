@@ -77,9 +77,9 @@ function exportCsv(payments: PaymentRecord[], periodLabel: string) {
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-semibold text-fg-subtle uppercase tracking-wide">{label}</p>
       <p className="mt-2 text-2xl font-bold text-gray-900 truncate">{value}</p>
-      {sub && <p className="mt-1 text-xs text-gray-400">{sub}</p>}
+      {sub && <p className="mt-1 text-xs text-fg-subtle">{sub}</p>}
     </div>
   );
 }
@@ -298,7 +298,7 @@ export function ReportsPage() {
 
         {/* ── Search ───────────────────────────────────────────────────────── */}
         <div className="relative print:hidden">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle"
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
@@ -320,12 +320,12 @@ export function ReportsPage() {
             <h2 className="text-sm font-semibold text-gray-700">
               Payment History
               {filtered.length > 0 && (
-                <span className="ml-2 text-xs font-medium text-gray-400">
+                <span className="ml-2 text-xs font-medium text-fg-subtle">
                   {filtered.length} record{filtered.length !== 1 ? 's' : ''}
                 </span>
               )}
             </h2>
-            <p className="text-xs text-gray-400">{periodLabel}</p>
+            <p className="text-xs text-fg-subtle">{periodLabel}</p>
           </div>
 
           {/* Loading */}
@@ -348,13 +348,13 @@ export function ReportsPage() {
           {!loading && !error && filtered.length === 0 && (
             <div className="px-6 py-16 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-                <svg className="h-7 w-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-7 w-7 text-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
               <p className="text-sm font-semibold text-gray-700">No payments recorded</p>
-              <p className="mt-1 text-xs text-gray-400 max-w-xs mx-auto">
+              <p className="mt-1 text-xs text-fg-subtle max-w-xs mx-auto">
                 {search
                   ? 'No results match your search.'
                   : 'Payments made via your Subvoy wallet will appear here. Use "Pay now" on any overdue subscription to record a payment.'}
@@ -398,13 +398,13 @@ export function ReportsPage() {
                           <p className="text-sm text-gray-900 font-medium">
                             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-fg-subtle mt-0.5">
                             {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{p.currency} wallet</p>
+                          <p className="text-xs text-fg-subtle mt-0.5">{p.currency} wallet</p>
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap">
                           <p className="text-sm font-bold text-red-600">

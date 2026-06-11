@@ -262,7 +262,7 @@ export function AdminAnnouncementsPage() {
                   ))
                 ) : announcements.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-gray-400 text-sm">
+                    <td colSpan={5} className="px-4 py-12 text-center text-fg-subtle text-sm">
                       No announcements yet. Create one to get started.
                     </td>
                   </tr>

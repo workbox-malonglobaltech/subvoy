@@ -77,7 +77,7 @@ export function AdminLimitsPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-fg-subtle">Loading…</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : (

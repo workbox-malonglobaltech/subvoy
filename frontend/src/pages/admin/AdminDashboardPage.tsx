@@ -138,7 +138,7 @@ export function AdminDashboardPage() {
               </div>
             ) : errors.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-gray-400">No unresolved errors</p>
+                <p className="text-sm text-fg-subtle">No unresolved errors</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -167,7 +167,7 @@ export function AdminDashboardPage() {
                         <td className="py-2 pr-2 text-gray-500 font-mono">
                           {err.route ? err.route.slice(0, 20) : '—'}
                         </td>
-                        <td className="py-2 text-right text-gray-400 whitespace-nowrap">
+                        <td className="py-2 text-right text-fg-subtle whitespace-nowrap">
                           {timeAgo(err.createdAt)}
                         </td>
                       </tr>
@@ -198,7 +198,7 @@ export function AdminDashboardPage() {
               </div>
             ) : unreadNotifs.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-gray-400">No unread alerts</p>
+                <p className="text-sm text-fg-subtle">No unread alerts</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -211,7 +211,7 @@ export function AdminDashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-800 truncate">{notif.title}</p>
                     </div>
-                    <span className="text-xs text-gray-400 whitespace-nowrap shrink-0">
+                    <span className="text-xs text-fg-subtle whitespace-nowrap shrink-0">
                       {timeAgo(notif.createdAt)}
                     </span>
                   </div>
