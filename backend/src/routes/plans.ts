@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/authenticate';
 import * as planModel from '../models/plan.model';
 
 const router = Router();
 
-router.use(authenticate);
-
-// GET /plans — the plan catalog for the pricing / upgrade UI.
+// GET /plans — the plan catalog for the pricing / upgrade UI. PUBLIC: the catalog
+// is marketing data (no user info), so the landing page can show pricing to guests.
+// (Checkout/upgrade still requires auth via the /billing routes.)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const audience = req.query.audience;
