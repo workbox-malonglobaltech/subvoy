@@ -14,6 +14,8 @@ import { useOnboarding, isWelcomeSeen, markWelcomeSeen } from '../hooks/useOnboa
 import { SubscriptionCard } from '../components/SubscriptionCard';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
 import { SubscriptionModal } from '../components/SubscriptionModal';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletWidget } from '../components/WalletWidget';
 import { OnboardingModal } from '../components/OnboardingModal';
@@ -294,12 +296,7 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <NavBar actions={
-        <button
-          onClick={openAdd}
-          className="rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-        >
-          + Add
-        </button>
+        <Button size="sm" onClick={openAdd}>+ Add</Button>
       } />
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
@@ -425,12 +422,7 @@ export function DashboardPage() {
                   aria-label="Search subscriptions"
                 />
               </div>
-              <button
-                onClick={openAdd}
-                className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors whitespace-nowrap"
-              >
-                + Add subscription
-              </button>
+              <Button onClick={openAdd} className="shrink-0 whitespace-nowrap">+ Add subscription</Button>
             </div>
 
             {/* Category filter pills */}
@@ -767,37 +759,18 @@ export function DashboardPage() {
       )}
 
       {deleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => setDeleteConfirm(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
+        <Modal
+          open
+          onClose={() => setDeleteConfirm(null)}
+          title="Delete subscription?"
+          description="This will remove it permanently."
+          className="max-w-sm"
         >
-          <div
-            className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 id="delete-dialog-title" className="font-semibold text-gray-900 mb-2">
-              Delete subscription?
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">This will remove it permanently.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" className="flex-1" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={() => handleDelete(deleteConfirm)}>Delete</Button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
