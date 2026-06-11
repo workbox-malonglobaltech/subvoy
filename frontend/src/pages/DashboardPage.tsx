@@ -20,18 +20,14 @@ import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletWidget } from '../components/WalletWidget';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
+import { DueSoonCard } from '../components/DueSoonCard';
 import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types';
-import { formatNative, toMonthlyNgn, convertAmount } from '../utils/currency';
+import { formatNative, toMonthlyNgn } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
 import { api, ApiError } from '../lib/api';
 import { daysUntil } from '../lib/date';
-
-const COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
-  '#3b82f6', '#ef4444', '#14b8a6', '#f97316', '#84cc16',
-];
 
 
 type Tab = 'all' | 'overdue' | 'upcoming' | 'paused';
@@ -614,100 +610,9 @@ export function DashboardPage() {
               </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-700 mb-4">Spend by category</h2>
-              {!summary || summary.byCategory.length === 0 ? (
-                <p className="text-sm text-fg-subtle text-center py-6">No data yet</p>
-              ) : (
-                <>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
-                      <Pie
-                        data={summary.byCategory}
-                        dataKey="total"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={3}
-                      >
-                        {summary.byCategory.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(v) => formatNative(Number(v), primary?.currency ?? 'USD')} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2 mt-3">
-                    {summary.byCategory.map((c, i) => (
-                      <div key={c.category} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ background: COLORS[i % COLORS.length] }}
-                            aria-hidden="true"
-                          />
-                          <span className="text-gray-600 truncate max-w-[120px]">{c.category}</span>
-                        </div>
-                        <span className="font-medium text-gray-900">{formatNative(c.total, primary?.currency ?? 'USD')}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Due soon</h2>
-              {upcoming.slice(0, 5).length === 0 ? (
-                <p className="text-sm text-fg-subtle">Nothing due in the next 30 days</p>
-              ) : (
-                <ul className="space-y-3">
-                  {upcoming.slice(0, 5).map(sub => {
-                    const days = daysUntil(sub.nextBillingDate);
-                    const ngnEquiv = fxRates && sub.currency !== 'NGN'
-                      ? convertAmount(sub.amount, sub.currency, 'NGN', fxRates)
-                      : null;
-                    return (
-                      <li key={sub.id} className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate max-w-[120px]">{sub.name}</p>
-                          <p className={`text-xs font-medium ${
-                            days < 0 ? 'text-red-600' :
-                            days === 0 ? 'text-red-500' :
-                            days <= 3  ? 'text-amber-600' : 'text-fg-subtle'
-                          }`}>
-                            {days < 0
-                              ? `${Math.abs(days)}d overdue`
-                              : days === 0 ? 'Due today'
-                              : `In ${days}d`}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {new Intl.NumberFormat('en-US', {
-                              style: 'currency', currency: sub.currency,
-                            }).format(sub.amount)}
-                          </p>
-                          {ngnEquiv !== null && (
-                            <p className="text-xs text-emerald-600">{formatNative(ngnEquiv, 'NGN')}</p>
-                          )}
-                          {days <= 0 && (
-                            <button
-                              onClick={() => handlePay(sub.id)}
-                              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors mt-0.5"
-                            >
-                              Pay now →
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+            <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={handlePay} />
           </div>
         </div>
       </main>
