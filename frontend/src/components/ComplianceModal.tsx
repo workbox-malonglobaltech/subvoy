@@ -10,6 +10,7 @@ import { useWorkspace } from '../contexts/WorkspaceContext';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { supabase } from '../lib/supabase';
 import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
 
 const DOCS_BUCKET = 'compliance-docs';
 
@@ -265,12 +266,10 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={saving}
-              className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+            <Button type="submit" loading={saving} className="flex-1">
               {saving ? 'Saving…' : initial ? 'Save changes' : 'Add obligation'}
-            </button>
+            </Button>
           </div>
         </form>
     </Modal>
