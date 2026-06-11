@@ -70,14 +70,16 @@ router.get('/summary', async (req: Request, res: Response) => {
       [workspaceId]
     );
 
-    // Query 3: category breakdown (native amount; primary currency dominates if mixed).
-    const { rows: catRows } = await pool.query<{ category: string; total: string }>(
+    // Query 3: category breakdown — per category AND currency (no cross-currency
+    // summing, so a high-magnitude currency can't swamp the chart).
+    const { rows: catRows } = await pool.query<{ category: string; currency: string; total: string }>(
       `SELECT
         COALESCE(category, 'Uncategorized') AS category,
+        currency,
         ROUND(SUM(amount)::numeric, 2)::text AS total
       FROM subscriptions
       WHERE workspace_id = $1 AND is_active = TRUE
-      GROUP BY COALESCE(category, 'Uncategorized')
+      GROUP BY COALESCE(category, 'Uncategorized'), currency
       ORDER BY SUM(amount) DESC`,
       [workspaceId]
     );
@@ -94,7 +96,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         activeCount: parseInt(counts?.active_count ?? '0', 10),
         due7Days:    parseInt(counts?.due_7_days ?? '0', 10),
         due30Days:   parseInt(counts?.due_30_days ?? '0', 10),
-        byCategory:  catRows.map(r => ({ category: r.category, total: parseFloat(r.total) })),
+        byCategory:  catRows.map(r => ({ category: r.category, currency: r.currency, total: parseFloat(r.total) })),
       },
       error: null,
     });

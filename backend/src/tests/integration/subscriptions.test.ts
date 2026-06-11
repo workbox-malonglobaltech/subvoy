@@ -98,6 +98,7 @@ const summaryCountsRow = {
 
 const summaryCategoryRow = {
   category: 'Entertainment',
+  currency: 'USD',
   total: '15.99',
 };
 
@@ -406,7 +407,7 @@ describe('GET /subscriptions/summary', () => {
     expect(data.byCurrency[0]).toMatchObject({ currency: 'USD', monthlySpend: 15.99, yearlySpend: 191.88, count: 1 });
     expect(data.activeCount).toBe(1);
     expect(data.due7Days).toBe(0);
-    expect(data.byCategory[0]).toMatchObject({ category: 'Entertainment', total: 15.99 });
+    expect(data.byCategory[0]).toMatchObject({ category: 'Entertainment', currency: 'USD', total: 15.99 });
   });
 
   it('returns 200 with empty/zeroed values when the user has no active subscriptions', async () => {

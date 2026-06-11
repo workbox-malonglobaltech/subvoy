@@ -14,7 +14,7 @@ export interface Summary {
   activeCount: number;
   due7Days: number;
   due30Days: number;
-  byCategory: { category: string; total: number }[];
+  byCategory: { category: string; currency: string; total: number }[];
 }
 
 export function useSummary(deps: unknown[] = []) {

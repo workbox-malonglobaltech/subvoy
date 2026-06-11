@@ -292,9 +292,6 @@ export function DashboardPage() {
         {/* Page header */}
         <h1 className="text-h1 text-fg">Dashboard</h1>
 
-        {/* Wallet balance widget */}
-        <WalletWidget />
-
         {/* FX rate movement alert — shown when NGN rate shifted >3% */}
         {ngnRateChangePct !== null && Math.abs(ngnRateChangePct) >= 3 && (
           <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
@@ -317,26 +314,32 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {sumLoading ? (
-            <>
-              <StatCardSkeleton /><StatCardSkeleton />
-              <StatCardSkeleton /><StatCardSkeleton />
-            </>
-          ) : (
-            <>
-              {[
-                { label: 'Monthly spend', value: spendLines('monthlySpend'), trend: trendPct },
-                { label: 'Yearly spend',  value: spendLines('yearlySpend'),  trend: null as number | null },
-                { label: 'Active subs',   value: String(summary?.activeCount ?? 0), trend: null as number | null },
-                { label: 'Due this week', value: String(summary?.due7Days ?? 0), trend: null as number | null },
-              ].map(card => (
-                <StatCard key={card.label} label={card.label} value={card.value} trend={card.trend} />
-              ))}
-            </>
-          )}
-        </div>
+        {/* Key metrics */}
+        <section aria-labelledby="kpi-heading">
+          <h2 id="kpi-heading" className="sr-only">Key metrics</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {sumLoading ? (
+              <>
+                <StatCardSkeleton /><StatCardSkeleton />
+                <StatCardSkeleton /><StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                {[
+                  { label: 'Monthly spend', value: spendLines('monthlySpend'), trend: trendPct },
+                  { label: 'Yearly spend',  value: spendLines('yearlySpend'),  trend: null as number | null },
+                  { label: 'Active subs',   value: String(summary?.activeCount ?? 0), trend: null as number | null },
+                  { label: 'Due this week', value: String(summary?.due7Days ?? 0), trend: null as number | null },
+                ].map(card => (
+                  <StatCard key={card.label} label={card.label} value={card.value} trend={card.trend} />
+                ))}
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Wallet balance */}
+        <WalletWidget />
 
         {/* Budget progress bars — one per currency with a budget set (no conversion) */}
         {budgetBars.length > 0 && (
@@ -373,7 +376,7 @@ export function DashboardPage() {
 
         {/* FX rate disclosure */}
         {fxRates && (
-          <p className="text-xs text-fg-subtle -mt-6">
+          <p className="text-xs text-fg-subtle">
             {fxStale
               ? '⚠ Exchange rates may be outdated — rates are refreshed daily.'
               : `Rates as of ${new Date(fxRates.fetchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · Interbank mid-market rate`
@@ -384,7 +387,7 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Subscription list */}
-          <div className="lg:col-span-2 space-y-4">
+          <section className="lg:col-span-2 space-y-4" aria-label="Your subscriptions">
 
             {/* Search bar + quick add */}
             <div className="flex items-center gap-2">
@@ -552,10 +555,10 @@ export function DashboardPage() {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
           {/* Sidebar */}
-          <div className="space-y-5">
+          <aside className="space-y-5" aria-label="Overview">
 
             {/* Onboarding checklist */}
             {showChecklist && (
@@ -613,7 +616,7 @@ export function DashboardPage() {
             <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
 
             <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={handlePay} />
-          </div>
+          </aside>
         </div>
       </main>
 
