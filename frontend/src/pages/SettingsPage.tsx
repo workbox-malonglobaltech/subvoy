@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { NavBar } from '../components/NavBar';
 import { TeamManagement } from '../components/TeamManagement';
+import { Button } from '../components/ui/Button';
 import { useSummary } from '../hooks/useSummary';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 
@@ -239,17 +240,13 @@ export function SettingsPage() {
                       maxLength={255}
                       className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48"
                     />
-                    <button
-                      type="submit"
-                      disabled={nameSaving}
-                      className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                    >
+                    <Button type="submit" size="sm" loading={nameSaving}>
                       {nameSaving ? 'Saving…' : 'Save'}
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       onClick={() => { setEditingName(false); setNameValue(user?.name ?? ''); }}
-                      className="text-xs text-gray-400 hover:text-gray-600"
+                      className="text-sm text-fg-muted hover:text-fg"
                     >
                       Cancel
                     </button>
@@ -355,13 +352,13 @@ export function SettingsPage() {
                   {pwError}
                 </p>
               )}
-              <button
+              <Button
                 type="submit"
-                disabled={pwSaving || (hasEmailLogin && !currentPassword) || !newPassword}
-                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                loading={pwSaving}
+                disabled={(hasEmailLogin && !currentPassword) || !newPassword}
               >
                 {pwSaving ? 'Saving…' : hasEmailLogin ? 'Change password' : 'Set password'}
-              </button>
+              </Button>
             </form>
           )}
         </section>
@@ -468,13 +465,9 @@ export function SettingsPage() {
                 )}
               </div>
 
-              <button
-                onClick={handleSavePrefs}
-                disabled={saving}
-                className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
+              <Button onClick={handleSavePrefs} loading={saving} className="w-full">
                 {saving ? 'Saving…' : 'Save preferences'}
-              </button>
+              </Button>
 
               {/* Test reminder */}
               <div className="pt-4 border-t border-gray-100">

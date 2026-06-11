@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Subscription, FxRates } from '../../../src/shared/types';
 import { getLogoUrls, getInitials, getAvatarColor } from '../utils/logo';
 import { formatNative, formatSubscriptionAmount } from '../utils/currency';
+import { Badge } from './ui/Badge';
 
 interface Props {
   sub: Subscription;
@@ -79,7 +80,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
   const [paying, setPaying] = useState(false);
 
   const days = daysUntil(sub.nextBillingDate);
-  const urgencyText = days <= 3 ? 'text-red-600' : days <= 7 ? 'text-amber-600' : 'text-gray-400';
+  const urgencyText = days <= 3 ? 'text-red-600' : days <= 7 ? 'text-amber-600' : 'text-fg-subtle';
   const catColor = CATEGORY_COLORS[sub.category ?? ''] ?? 'bg-indigo-50 text-indigo-600';
 
   // Left-accent border by urgency (only when active and not selected)
@@ -123,9 +124,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-gray-900 truncate">{sub.name}</h3>
                 {!sub.isActive && (
-                  <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                    Paused
-                  </span>
+                  <Badge tone="neutral" className="shrink-0">Paused</Badge>
                 )}
               </div>
               {sub.service && (
@@ -176,9 +175,9 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
             </div>
             <div className="text-right shrink-0">
               <p className="font-bold text-gray-900">{amountPrimary}</p>
-              <p className="text-xs text-gray-400">/{CYCLE_LABEL[sub.billingCycle]}</p>
+              <p className="text-xs text-fg-subtle">/{CYCLE_LABEL[sub.billingCycle]}</p>
               {showMonthlyEquiv && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-fg-subtle mt-0.5">
                   ≈ {formatNative(monthlyEquiv, sub.currency)}/mo
                 </p>
               )}
@@ -191,7 +190,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
 
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-fg-subtle">
               {new Date(sub.nextBillingDate).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric',
               })}
@@ -199,7 +198,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
             {sub.notes && (
               <button
                 onClick={() => setExpanded(prev => !prev)}
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-0.5"
+                className="text-xs text-fg-subtle hover:text-fg transition-colors flex items-center gap-0.5"
                 aria-label={expanded ? 'Hide notes' : 'Show notes'}
                 aria-expanded={expanded}
               >
@@ -237,7 +236,7 @@ export function SubscriptionCard({ sub, onEdit, onDelete, onArchive, onRestore, 
                 {onArchive && (
                   <button
                     onClick={() => onArchive(sub.id)}
-                    className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                    className="text-xs text-fg-subtle hover:text-fg font-medium transition-colors"
                     aria-label={`Pause ${sub.name}`}
                     title="Pause stops reminders & autopay and excludes it from spend totals — but keeps the record and history. Resume anytime."
                   >
