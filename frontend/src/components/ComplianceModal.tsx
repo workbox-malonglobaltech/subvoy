@@ -7,6 +7,7 @@ import {
 } from '../../../src/shared/types';
 import { api } from '../lib/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { SUPPORTED_CURRENCIES } from '../utils/currency';
 
 interface Props {
   open: boolean;
@@ -41,6 +42,8 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
   const [dueDate, setDueDate] = useState('');
   const [reminderOffsets, setReminderOffsets] = useState('30, 7, 1');
   const [penaltyNote, setPenaltyNote] = useState('');
+  const [penaltyAmount, setPenaltyAmount] = useState('');
+  const [penaltyCurrency, setPenaltyCurrency] = useState('USD');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -54,12 +57,14 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
       setDueDate(initial.dueDate);
       setReminderOffsets(initial.reminderOffsets.join(', '));
       setPenaltyNote(initial.penaltyNote ?? '');
+      setPenaltyAmount(initial.penaltyAmount != null ? String(initial.penaltyAmount) : '');
+      setPenaltyCurrency(initial.penaltyCurrency ?? 'USD');
       setDescription(initial.description ?? '');
       setAssigneeUserId(initial.assigneeUserId ?? '');
     } else {
       setTitle(''); setAuthority(''); setReferenceNumber('');
       setCadence('yearly'); setDueDate(''); setReminderOffsets('30, 7, 1');
-      setPenaltyNote(''); setDescription(''); setAssigneeUserId('');
+      setPenaltyNote(''); setPenaltyAmount(''); setPenaltyCurrency('USD'); setDescription(''); setAssigneeUserId('');
     }
     setError('');
   }, [initial, open]);
@@ -89,6 +94,8 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
         dueDate,
         reminderOffsets: parseOffsets(reminderOffsets),
         penaltyNote: penaltyNote.trim() || undefined,
+        penaltyAmount: penaltyAmount.trim() ? parseFloat(penaltyAmount) : null,
+        penaltyCurrency: penaltyAmount.trim() ? penaltyCurrency : undefined,
         description: description.trim() || undefined,
         assigneeUserId: assigneeUserId || null,
       });
@@ -188,12 +195,32 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
           )}
 
           <div>
-            <label htmlFor="c-penalty" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Penalty for late filing <span className="text-gray-400 font-normal">(optional)</span>
             </label>
+            <div className="flex gap-2">
+              <select
+                value={penaltyCurrency}
+                onChange={e => setPenaltyCurrency(e.target.value)}
+                aria-label="Penalty currency"
+                className="rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {SUPPORTED_CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.value}</option>)}
+              </select>
+              <input
+                id="c-penalty-amount"
+                type="number"
+                min={0}
+                step="any"
+                value={penaltyAmount}
+                onChange={e => setPenaltyAmount(e.target.value)}
+                placeholder="Amount, e.g. 50000"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
             <input id="c-penalty" value={penaltyNote} onChange={e => setPenaltyNote(e.target.value)} maxLength={1000}
-              placeholder="e.g. ₦50,000 + ₦5,000/month"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              placeholder="Note (optional) — e.g. + ₦5,000/month after the first month"
+              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
 
           <div>

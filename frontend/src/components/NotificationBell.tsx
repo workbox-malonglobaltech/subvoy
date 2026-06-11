@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
 
 function notifIcon(type: string): string {
@@ -112,13 +113,21 @@ export function NotificationBell() {
             )}
           </div>
 
-          <div className="px-4 py-2 border-t border-gray-100">
-            <a
-              href="/settings"
+          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+            <Link
+              to="/notifications"
+              onClick={() => setOpen(false)}
+              className="text-xs text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+            >
+              View all →
+            </Link>
+            <Link
+              to="/settings"
+              onClick={() => setOpen(false)}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Notification settings →
-            </a>
+              Settings
+            </Link>
           </div>
         </div>
       )}
