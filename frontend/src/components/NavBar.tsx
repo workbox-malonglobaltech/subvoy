@@ -19,9 +19,9 @@ interface NavBarProps {
 //   5. Import      — occasional utility, near end
 //   6. Settings    — admin/configuration, always last
 
-interface NavItem { to: string; label: string }
+export interface NavItem { to: string; label: string }
 
-const BASE_NAV_ITEMS: NavItem[] = [
+export const BASE_NAV_ITEMS: NavItem[] = [
   { to: '/',         label: 'Dashboard' },
   { to: '/analytics',label: 'Analytics' },
   { to: '/reports',  label: 'Reports'   },
@@ -31,10 +31,10 @@ const BASE_NAV_ITEMS: NavItem[] = [
 ];
 
 // Compliance is only shown in Business workspaces.
-const COMPLIANCE_ITEM: NavItem = { to: '/compliance', label: 'Compliance' };
+export const COMPLIANCE_ITEM: NavItem = { to: '/compliance', label: 'Compliance' };
 
 // ── Icons (24×24 Heroicons outline) ──────────────────────────────────────────
-const NAV_ICONS: Record<string, React.ReactNode> = {
+export const NAV_ICONS: Record<string, React.ReactNode> = {
   '/': (
     // Home / Dashboard
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
