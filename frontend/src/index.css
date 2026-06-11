@@ -1,6 +1,32 @@
+@import '@fontsource-variable/inter';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Design System base layer ─────────────────────────────────────────────── */
+@layer base {
+  body {
+    @apply font-sans text-fg antialiased;
+  }
+
+  /* Audit §5a — universal, visible keyboard focus on every interactive element.
+     Mouse clicks don't trigger :focus-visible, so this is keyboard-only. */
+  :where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: none;
+    @apply ring-2 ring-primary/70 ring-offset-2 ring-offset-surface rounded-md;
+  }
+}
+
+/* Audit §5e — respect reduced-motion: neutralise non-essential animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* Hide scrollbar while keeping scroll behaviour */
 .scrollbar-none {
