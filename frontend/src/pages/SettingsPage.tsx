@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
-import { NavBar } from '../components/NavBar';
 import { TeamManagement } from '../components/TeamManagement';
 import { Button } from '../components/ui/Button';
 import { useSummary } from '../hooks/useSummary';
@@ -216,7 +215,6 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar />
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-page-enter">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
-import { NavBar } from '../components/NavBar';
 
 interface Connection {
   id: string;
@@ -309,7 +308,6 @@ export function EmailImportPage() {
       )}
 
       <div className="min-h-screen bg-gray-50">
-        <NavBar />
 
         <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-page-enter">
           <div>

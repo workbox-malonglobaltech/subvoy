@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { NavBar } from '../components/NavBar';
 import { usePaymentHistory, PaymentRecord } from '../hooks/usePaymentHistory';
 import { TransactionRowSkeleton } from '../components/Skeleton';
 import { useToast } from '../contexts/ToastContext';
@@ -178,7 +177,6 @@ export function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
-      <NavBar />
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6 animate-page-enter">
 

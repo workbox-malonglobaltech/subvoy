@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { NavBar } from '../components/NavBar';
 import { usePlans } from '../hooks/usePlans';
 import { ErrorState } from '../components/ui/ErrorState';
 import { useWorkspace } from '../contexts/WorkspaceContext';
@@ -38,7 +37,6 @@ export function PlansPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar />
       <main className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900">Plans &amp; pricing</h1>
         <p className="text-sm text-gray-500 mb-6">
