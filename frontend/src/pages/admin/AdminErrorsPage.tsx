@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
+import { Modal } from '../../components/ui/Modal';
 import { useAdminErrors } from '../../hooks/useAdminErrors';
 import { useAdminNotifications } from '../../hooks/useAdminNotifications';
 import { useAuth } from '../../contexts/AuthContext';
@@ -257,23 +258,13 @@ export function AdminErrorsPage() {
 
       {/* Purge confirm modal */}
       {purgingConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => setPurgingConfirm(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="purge-dialog-title"
+        <Modal
+          open
+          onClose={() => setPurgingConfirm(false)}
+          title="Purge resolved errors?"
+          description="All resolved error logs will be permanently deleted. This cannot be undone."
+          className="max-w-sm"
         >
-          <div
-            className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 id="purge-dialog-title" className="font-semibold text-gray-900 mb-2">
-              Purge resolved errors?
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              All resolved error logs will be permanently deleted. This cannot be undone.
-            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setPurgingConfirm(false)}
@@ -289,8 +280,7 @@ export function AdminErrorsPage() {
                 {purging ? 'Purging…' : 'Purge'}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </AdminLayout>
   );

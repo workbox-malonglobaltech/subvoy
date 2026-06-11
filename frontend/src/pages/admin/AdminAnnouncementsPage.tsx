@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
+import { Modal } from '../../components/ui/Modal';
 import { useAdminNotifications } from '../../hooks/useAdminNotifications';
 import { useToast } from '../../contexts/ToastContext';
 import { api } from '../../lib/api';
@@ -60,21 +61,7 @@ function NewAnnouncementModal({ onClose, onSuccess }: NewAnnouncementModalProps)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="new-announcement-title"
-    >
-      <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        <h3 id="new-announcement-title" className="font-semibold text-gray-900 mb-5 text-lg">
-          New Announcement
-        </h3>
-
+    <Modal open onClose={onClose} title="New Announcement">
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {/* Title */}
           <div>
@@ -183,8 +170,7 @@ function NewAnnouncementModal({ onClose, onSuccess }: NewAnnouncementModalProps)
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

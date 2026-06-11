@@ -19,18 +19,17 @@ const ERRORS = [
     re: /text-gray-400/,
     msg: 'Use text-fg-subtle / text-fg-muted — gray-400 (~2.8:1) fails WCAG AA for text.',
   },
-];
-
-// Advisory only — remaining migration debt, surfaced but non-blocking.
-const WARNINGS = [
   {
     id: 'hand-rolled-dialog',
     re: /role="dialog"/,
-    msg: 'Prefer the accessible <Modal> primitive (Radix: focus-trap + Escape).',
+    msg: 'Use the accessible <Modal> primitive (Radix: focus-trap + Escape).',
     // Modal itself is built on Radix; the notification bell is a popover, not a dialog.
     skipFile: f => f.endsWith('components/ui/Modal.tsx') || f.endsWith('components/NotificationBell.tsx'),
   },
 ];
+
+// Advisory only — surfaced but non-blocking.
+const WARNINGS = [];
 
 function walk(dir) {
   const out = [];
@@ -50,6 +49,7 @@ for (const file of walk(SRC)) {
   const lines = readFileSync(file, 'utf8').split('\n');
   lines.forEach((line, i) => {
     for (const r of ERRORS) {
+      if (r.skipFile?.(rel)) continue;
       if (r.re.test(line)) { console.error(`ERROR ${rel}:${i + 1}  [${r.id}] ${r.msg}`); errors++; }
     }
     for (const r of WARNINGS) {
