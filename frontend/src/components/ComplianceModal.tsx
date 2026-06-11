@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { supabase } from '../lib/supabase';
+import { Modal } from './ui/Modal';
 
 const DOCS_BUCKET = 'compliance-docs';
 
@@ -84,7 +85,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
       .catch(() => setMembers([]));
   }, [open, active?.id]);
 
-  if (!open) return null;
+  // Radix Dialog controls visibility via the `open` prop (handles focus return).
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -135,20 +136,7 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="compliance-modal-title"
-    >
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 id="compliance-modal-title" className="text-lg font-semibold text-gray-900">
-            {initial ? 'Edit Obligation' : 'Add Compliance Obligation'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close modal">&times;</button>
-        </div>
+    <Modal open={open} onClose={onClose} title={initial ? 'Edit Obligation' : 'Add Compliance Obligation'}>
 
         {error && (
           <div role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">{error}</div>
@@ -285,7 +273,6 @@ export function ComplianceModal({ open, onClose, onSave, initial }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

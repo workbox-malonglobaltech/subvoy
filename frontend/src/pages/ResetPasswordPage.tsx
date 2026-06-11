@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { Button } from '../components/ui/Button';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -139,13 +140,9 @@ export function ResetPasswordPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                >
+                <Button type="submit" loading={loading} size="lg" className="w-full">
                   {loading ? 'Saving…' : 'Set new password'}
-                </button>
+                </Button>
               </form>
             </>
           )}
