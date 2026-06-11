@@ -7,6 +7,7 @@ import { NavBar } from '../components/NavBar';
 import { MonthlyChart } from '../components/MonthlyChart';
 import { CalendarView } from '../components/CalendarView';
 import { StatCardSkeleton, ChartSkeleton, Skeleton } from '../components/Skeleton';
+import { StatCard } from '../components/ui/StatCard';
 
 const COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
@@ -63,31 +64,21 @@ export function AnalyticsPage() {
             <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
           ) : (
             <>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">YTD Spend</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(ytdSpend)}</p>
-                <p className="text-xs text-fg-subtle mt-1">{currentYear} so far</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Monthly avg</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {!data ? '—' : formatCurrency(
-                    data.months.filter(m => m.total > 0).length > 0
-                      ? data.months.reduce((a, m) => a + m.total, 0) / data.months.filter(m => m.total > 0).length
-                      : 0
-                  )}
-                </p>
-                <p className="text-xs text-fg-subtle mt-1">Across active months</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Top category</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900 truncate">
-                  {maxCategory?.category || '—'}
-                </p>
-                <p className="text-xs text-fg-subtle mt-1">
-                  {maxCategory?.total ? formatCurrency(maxCategory.total) + '/mo' : 'No data yet'}
-                </p>
-              </div>
+              <StatCard label="YTD Spend" value={formatCurrency(ytdSpend)} hint={`${currentYear} so far`} />
+              <StatCard
+                label="Monthly avg"
+                value={!data ? '—' : formatCurrency(
+                  data.months.filter(m => m.total > 0).length > 0
+                    ? data.months.reduce((a, m) => a + m.total, 0) / data.months.filter(m => m.total > 0).length
+                    : 0
+                )}
+                hint="Across active months"
+              />
+              <StatCard
+                label="Top category"
+                value={<span className="truncate">{maxCategory?.category || '—'}</span>}
+                hint={maxCategory?.total ? formatCurrency(maxCategory.total) + '/mo' : 'No data yet'}
+              />
             </>
           )}
         </div>
