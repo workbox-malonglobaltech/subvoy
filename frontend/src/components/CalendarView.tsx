@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Subscription, ComplianceItem } from '../../../src/shared/types';
+import { daysUntil } from '../lib/date';
 
 interface Props {
   subscriptions: Subscription[];
@@ -19,10 +20,6 @@ interface CalEvent {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function daysUntil(dateStr: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr).getTime() - today.getTime()) / 86400000);
-}
 
 /** Dot/urgency colour — red imminent, amber soon, else kind base colour. */
 function dotColor(ev: CalEvent): string {

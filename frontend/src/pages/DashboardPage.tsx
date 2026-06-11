@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
@@ -26,17 +26,13 @@ import { formatNative, toMonthlyNgn, convertAmount } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
 import { api, ApiError } from '../lib/api';
+import { daysUntil } from '../lib/date';
 
 const COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
   '#3b82f6', '#ef4444', '#14b8a6', '#f97316', '#84cc16',
 ];
 
-function daysUntil(dateStr: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr).getTime() - today.getTime()) / 86400000);
-}
 
 type Tab = 'all' | 'overdue' | 'upcoming' | 'paused';
 
@@ -51,7 +47,7 @@ export function DashboardPage() {
   const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, refetch } = useSubscriptions(true);
   // Bump on any mutation so the summary refetches — count alone misses edits.
   const [summaryKey, setSummaryKey] = useState(0);
-  const refreshSummary = () => setSummaryKey(k => k + 1);
+  const refreshSummary = useCallback(() => setSummaryKey(k => k + 1), []);
   const { summary, loading: sumLoading } = useSummary([summaryKey]);
   const { rates: fxRates, stale: fxStale, ngnRateChangePct } = useFxRates();
   const { wallet, loading: walletLoading } = useWallet();
@@ -179,16 +175,16 @@ export function DashboardPage() {
     return result;
   }, [subscriptions, activeTab, upcoming, overdue, paused, active, search, categoryFilter]);
 
-  function openAdd() { setEditing(null); setModalOpen(true); }
-  function openEdit(sub: Subscription) { setEditing(sub); setModalOpen(true); }
+  const openAdd = useCallback(() => { setEditing(null); setModalOpen(true); }, []);
+  const openEdit = useCallback((sub: Subscription) => { setEditing(sub); setModalOpen(true); }, []);
 
-  function toggleSelect(id: string, checked: boolean) {
+  const toggleSelect = useCallback((id: string, checked: boolean) => {
     setSelected(prev => {
       const next = new Set(prev);
       if (checked) next.add(id); else next.delete(id);
       return next;
     });
-  }
+  }, []);
 
   function toggleSelectAll() {
     if (selected.size === filtered.length) {
@@ -264,22 +260,22 @@ export function DashboardPage() {
     }
   }
 
-  async function handleArchive(id: string) {
+  const handleArchive = useCallback(async (id: string) => {
     await archive(id);
     refreshSummary();
     toast.success('Subscription paused');
-  }
+  }, [archive, refreshSummary, toast]);
 
-  async function handleRestore(id: string) {
+  const handleRestore = useCallback(async (id: string) => {
     await restore(id);
     refreshSummary();
     toast.success('Subscription restored');
-  }
+  }, [restore, refreshSummary, toast]);
 
-  async function handlePay(id: string) {
+  const handlePay = useCallback(async (id: string) => {
     const sub = subscriptions.find(s => s.id === id) ?? null;
     setPayConfirm(sub);
-  }
+  }, [subscriptions]);
 
   async function confirmPay() {
     if (!payConfirm) return;
@@ -546,7 +542,7 @@ export function DashboardPage() {
                     key={sub.id}
                     sub={sub}
                     onEdit={openEdit}
-                    onDelete={id => setDeleteConfirm(id)}
+                    onDelete={setDeleteConfirm}
                     onArchive={sub.isActive ? handleArchive : undefined}
                     onRestore={!sub.isActive ? handleRestore : undefined}
                     onPay={sub.isActive ? handlePay : undefined}
