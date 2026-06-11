@@ -117,6 +117,8 @@ export function NavBar({ actions }: NavBarProps) {
               <Link
                 key={to}
                 to={to}
+                aria-label={label}
+                title={label}
                 aria-current={active ? 'page' : undefined}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   active
@@ -155,7 +157,7 @@ export function NavBar({ actions }: NavBarProps) {
           {/* Sign out — desktop only */}
           <button
             onClick={logout}
-            className="text-sm text-gray-400 hover:text-gray-700 transition-colors hidden sm:block"
+            className="text-sm text-fg-muted hover:text-fg transition-colors hidden sm:block"
           >
             Sign out
           </button>
