@@ -17,7 +17,7 @@ import { SubscriptionModal } from '../components/SubscriptionModal';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
-import { WalletWidget } from '../components/WalletWidget';
+import { WalletChip } from '../components/WalletChip';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
@@ -285,12 +285,30 @@ export function DashboardPage() {
     setPayConfirm(null);
   }
 
+  // Two-initial avatar from the user's name (falls back to the email initial).
+  const initials = user?.name?.trim()
+    ? user.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase()
+    : (user?.email?.[0] ?? '?').toUpperCase();
+
   return (
     <>
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
 
-        {/* Page header */}
-        <h1 className="text-h1 text-fg">Dashboard</h1>
+        {/* Page header — title + compact wallet + profile */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-h1 text-fg">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <WalletChip />
+            <Link
+              to="/settings"
+              aria-label="Account settings"
+              title={user?.name ?? user?.email ?? 'Account'}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-700 transition-colors hover:bg-primary-100"
+            >
+              {initials}
+            </Link>
+          </div>
+        </div>
 
         {/* FX rate movement alert — shown when NGN rate shifted >3% */}
         {ngnRateChangePct !== null && Math.abs(ngnRateChangePct) >= 3 && (
@@ -337,9 +355,6 @@ export function DashboardPage() {
             )}
           </div>
         </section>
-
-        {/* Wallet balance */}
-        <WalletWidget />
 
         {/* Budget progress bars — one per currency with a budget set (no conversion) */}
         {budgetBars.length > 0 && (
