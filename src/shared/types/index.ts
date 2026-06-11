@@ -376,5 +376,6 @@ export interface SubscriptionSummary {
   activeCount: number;
   due7Days: number;
   due30Days: number;
-  byCategory: { category: string; total: number }[];
+  /** Per-currency category breakdown (no cross-currency summing). */
+  byCategory: { category: string; currency: string; total: number }[];
 }
