@@ -53,7 +53,7 @@ function PricingSection() {
             );
           })}
         </div>
-        <p className="mt-6 text-center text-xs text-gray-400">No credit card required to start · Cancel anytime</p>
+        <p className="mt-6 text-center text-xs text-fg-subtle">No credit card required to start · Cancel anytime</p>
       </div>
     </section>
   );
@@ -155,7 +155,7 @@ function MockDashboard() {
           <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Active subs</p>
             <p className="mt-1 text-xl font-bold text-gray-900">4</p>
-            <p className="text-xs text-gray-400 mt-0.5">2 due this week</p>
+            <p className="text-xs text-fg-subtle mt-0.5">2 due this week</p>
           </div>
         </div>
 
@@ -181,12 +181,12 @@ function MockDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{sub.name}</p>
-                  <p className="text-xs text-gray-400">{sub.tag}</p>
+                  <p className="text-xs text-fg-subtle">{sub.tag}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-gray-900">{sub.amount}</p>
-                <p className={`text-xs font-medium ${sub.urgent ? 'text-red-500' : 'text-gray-400'}`}>
+                <p className={`text-xs font-medium ${sub.urgent ? 'text-red-500' : 'text-fg-subtle'}`}>
                   {sub.urgent ? `⚠ In ${sub.days} days` : `In ${sub.days} days`}
                 </p>
               </div>
@@ -267,7 +267,7 @@ export function LandingPage() {
                   Sign in
                 </Link>
               </div>
-              <p className="mt-4 text-sm text-gray-400">No credit card required · Free to use</p>
+              <p className="mt-4 text-sm text-fg-subtle">No credit card required · Free to use</p>
             </div>
 
             {/* Mock dashboard preview */}
@@ -393,7 +393,7 @@ export function LandingPage() {
                     <div key={card.label} className={`${card.color} rounded-xl p-4 shadow-sm`}>
                       <p className={`text-xs font-medium ${card.color.includes('indigo-600') ? 'text-indigo-200' : 'text-gray-500'}`}>{card.label}</p>
                       <p className={`text-lg font-bold mt-1 ${card.color.includes('indigo-600') ? 'text-white' : card.color.includes('emerald') ? 'text-emerald-700' : 'text-gray-900'}`}>{card.value}</p>
-                      <p className={`text-xs mt-0.5 ${card.color.includes('indigo-600') ? 'text-indigo-300' : card.color.includes('emerald') ? 'text-emerald-600' : 'text-gray-400'}`}>{card.sub}</p>
+                      <p className={`text-xs mt-0.5 ${card.color.includes('indigo-600') ? 'text-indigo-300' : card.color.includes('emerald') ? 'text-emerald-600' : 'text-fg-subtle'}`}>{card.sub}</p>
                     </div>
                   ))}
                 </div>
@@ -431,14 +431,14 @@ export function LandingPage() {
                 Sign in
               </Link>
             </div>
-            <p className="mt-4 text-sm text-gray-400">Free to use · No credit card required</p>
+            <p className="mt-4 text-sm text-fg-subtle">Free to use · No credit card required</p>
           </div>
         </section>
 
       </main>
 
       {/* ── Footer ── */}
-      <footer className="bg-gray-900 text-gray-400 py-12 px-4">
+      <footer className="bg-gray-900 text-fg-subtle py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-3 gap-8 mb-10">
             {/* Brand */}

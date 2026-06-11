@@ -102,7 +102,7 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
                 >
                   <div className="text-base">{dest === 'usd' ? '💳' : '🏦'}</div>
                   <div>{dest === 'usd' ? 'USD Card' : 'NGN Balance'}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-xs text-fg-subtle mt-0.5">
                     {dest === 'usd' ? 'for subscriptions' : 'local payments'}
                   </div>
                 </button>
@@ -116,7 +116,7 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
               Amount ({isUsd ? '$' : '₦'})
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">{isUsd ? '$' : '₦'}</span>
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-fg-subtle text-sm">{isUsd ? '$' : '₦'}</span>
               <input
                 id="topup-amount"
                 type="number"

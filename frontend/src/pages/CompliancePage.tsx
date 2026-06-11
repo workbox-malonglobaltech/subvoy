@@ -36,7 +36,7 @@ function dueLabel(item: ComplianceItem): { text: string; cls: string } {
   const d = daysUntil(item.dueDate);
   if (d === 0) return { text: 'Due today', cls: 'text-red-600' };
   if (d <= 7) return { text: `Due in ${d}d`, cls: 'text-amber-600' };
-  return { text: `Due in ${d}d`, cls: 'text-gray-400' };
+  return { text: `Due in ${d}d`, cls: 'text-fg-subtle' };
 }
 
 export function CompliancePage() {
@@ -117,7 +117,7 @@ export function CompliancePage() {
             </p>
           </div>
         ) : loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-fg-subtle">Loading…</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : sorted.length === 0 ? (
@@ -170,7 +170,7 @@ export function CompliancePage() {
                         </button>
                       )}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0">
+                    <span className="text-xs text-fg-subtle shrink-0">
                       {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>

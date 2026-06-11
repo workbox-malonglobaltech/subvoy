@@ -126,7 +126,7 @@ export function WalletPage() {
                   <span className="text-lg">🏦</span>
                 </div>
                 <p className="text-3xl font-bold text-gray-900 tracking-tight">{formatNgn(wallet.ngnBalance)}</p>
-                <p className="text-xs text-gray-400 mt-1">Local naira balance</p>
+                <p className="text-xs text-fg-subtle mt-1">Local naira balance</p>
               </div>
             </div>
 
@@ -162,23 +162,23 @@ export function WalletPage() {
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                   <h2 className="text-sm font-semibold text-gray-900 mb-3">
                     Spending this month
-                    <span className="ml-2 text-xs font-normal text-gray-400">{monthLabel}</span>
+                    <span className="ml-2 text-xs font-normal text-fg-subtle">{monthLabel}</span>
                   </h2>
                   <div className="flex flex-wrap gap-4">
                     {usdSpent > 0 && (
                       <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">USD paid</p>
+                        <p className="text-xs text-fg-subtle uppercase tracking-wide">USD paid</p>
                         <p className="text-xl font-bold text-gray-900">{formatUsd(usdSpent)}</p>
                       </div>
                     )}
                     {ngnSpent > 0 && (
                       <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">NGN paid</p>
+                        <p className="text-xs text-fg-subtle uppercase tracking-wide">NGN paid</p>
                         <p className="text-xl font-bold text-gray-900">{formatNgn(ngnSpent)}</p>
                       </div>
                     )}
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide">Payments</p>
+                      <p className="text-xs text-fg-subtle uppercase tracking-wide">Payments</p>
                       <p className="text-xl font-bold text-gray-900">{count}</p>
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export function WalletPage() {
                 <div className="py-12 text-center">
                   <p className="text-2xl mb-2">💸</p>
                   <p className="text-sm text-gray-500">No transactions yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Fund your wallet to get started</p>
+                  <p className="text-xs text-fg-subtle mt-1">Fund your wallet to get started</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-100">
@@ -227,7 +227,7 @@ export function WalletPage() {
                       {/* Description + date */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{tx.description}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{formatDate(tx.createdAt)}</p>
+                        <p className="text-xs text-fg-subtle mt-0.5">{formatDate(tx.createdAt)}</p>
                       </div>
 
                       {/* Type badge */}
@@ -241,7 +241,7 @@ export function WalletPage() {
                           {tx.direction === 'in' ? '+' : '-'}
                           {tx.currency === 'NGN' ? formatNgn(tx.amount) : formatUsd(tx.amount)}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-fg-subtle">
                           bal: {tx.currency === 'NGN' ? formatNgn(tx.balanceAfter) : formatUsd(tx.balanceAfter)}
                         </p>
                       </div>

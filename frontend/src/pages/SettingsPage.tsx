@@ -252,7 +252,7 @@ export function SettingsPage() {
                     </button>
                   </form>
                 ) : (
-                  <dd className="text-sm font-medium text-gray-900">{user?.name ?? <span className="text-gray-400 italic">Not set</span>}</dd>
+                  <dd className="text-sm font-medium text-gray-900">{user?.name ?? <span className="text-fg-subtle italic">Not set</span>}</dd>
                 )}
               </div>
               {!editingName && (
@@ -345,7 +345,7 @@ export function SettingsPage() {
                     {pwShow ? 'Hide' : 'Show'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Min 10 chars, one uppercase letter and one number</p>
+                <p className="text-xs text-fg-subtle mt-1">Min 10 chars, one uppercase letter and one number</p>
               </div>
               {pwError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert">
@@ -404,7 +404,7 @@ export function SettingsPage() {
                   onChange={e => setPrefs(p => ({ ...p, daysBefore: parseInt(e.target.value, 10) }))}
                   className="w-full mt-2 accent-indigo-600"
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-1" aria-hidden="true">
+                <div className="flex justify-between text-xs text-fg-subtle mt-1" aria-hidden="true">
                   <span>1 day</span><span>7 days</span><span>14 days</span>
                 </div>
               </div>
@@ -439,7 +439,7 @@ export function SettingsPage() {
                           Budget ({cur}/month)
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{symbolFor(cur)}</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle text-sm">{symbolFor(cur)}</span>
                           <input
                             id={`budget-${cur}`}
                             type="number"
@@ -514,7 +514,7 @@ export function SettingsPage() {
           </form>
 
           {customCategories.length === 0 ? (
-            <p className="text-sm text-gray-400">No custom categories yet.</p>
+            <p className="text-sm text-fg-subtle">No custom categories yet.</p>
           ) : (
             <ul className="divide-y divide-gray-100" role="list">
               {customCategories.map(cat => (

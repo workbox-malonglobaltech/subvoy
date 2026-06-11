@@ -100,7 +100,7 @@ export function CalendarView({ subscriptions, complianceItems = [] }: Props) {
       {/* Day names */}
       <div className="grid grid-cols-7 mb-1">
         {DAY_NAMES.map(d => (
-          <div key={d} className="text-center text-[10px] font-semibold text-gray-400 uppercase py-1">{d}</div>
+          <div key={d} className="text-center text-[10px] font-semibold text-fg-subtle uppercase py-1">{d}</div>
         ))}
       </div>
 
@@ -129,7 +129,7 @@ export function CalendarView({ subscriptions, complianceItems = [] }: Props) {
                       {evs.slice(0, 3).map((ev, i) => (
                         <span key={i} className={`w-1.5 h-1.5 rounded-full ${dotColor(ev)}`} aria-hidden="true" />
                       ))}
-                      {evs.length > 3 && <span className="text-[8px] text-gray-400">+{evs.length - 3}</span>}
+                      {evs.length > 3 && <span className="text-[8px] text-fg-subtle">+{evs.length - 3}</span>}
                     </div>
                   )}
                   {isExpanded && evs.length > 0 && (
@@ -152,7 +152,7 @@ export function CalendarView({ subscriptions, complianceItems = [] }: Props) {
         })}
       </div>
 
-      <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-gray-400">
+      <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-fg-subtle">
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400" /> Payment</span>
         {hasCompliance && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Compliance</span>}
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400" /> Due soon</span>
