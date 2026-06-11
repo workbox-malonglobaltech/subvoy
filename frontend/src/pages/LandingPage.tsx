@@ -1,5 +1,63 @@
 import { Link } from 'react-router-dom';
 import { LogoMark } from '../components/LogoMark';
+import { usePlans } from '../hooks/usePlans';
+import type { Plan } from '../../../src/shared/types';
+
+function priceLabel(p: Plan): string {
+  if (p.priceMinor === 0) return 'Free';
+  const amount = (p.priceMinor / 100).toLocaleString('en-US', {
+    style: 'currency', currency: p.currency, minimumFractionDigits: 0,
+  });
+  return `${amount}/${p.interval === 'year' ? 'yr' : 'mo'}`;
+}
+
+/** Public pricing section — fetches the plan catalog and links guests to sign up. */
+function PricingSection() {
+  const { plans, loading } = usePlans('personal');
+  if (loading || plans.length === 0) return null;
+  return (
+    <section id="pricing" className="py-20 px-4 scroll-mt-20">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold text-gray-900">Simple, transparent pricing</h2>
+          <p className="mt-3 text-gray-500 max-w-xl mx-auto">
+            Start free and upgrade when you need more. Running a business? Business plans are available once you sign up.
+          </p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {plans.map(p => {
+            const paid = p.priceMinor > 0;
+            return (
+              <div key={p.key} className={`rounded-2xl border bg-white p-6 shadow-sm flex flex-col ${paid ? 'border-indigo-200 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
+                <h3 className="text-base font-bold text-gray-900">{p.displayName}</h3>
+                <p className="mt-1 text-3xl font-extrabold text-gray-900">{priceLabel(p)}</p>
+                <ul className="mt-4 space-y-1.5 flex-1">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                      <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/register"
+                  className={`mt-6 rounded-lg px-4 py-2 text-sm font-semibold text-center transition-colors ${
+                    paid ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {paid ? `Get ${p.displayName}` : 'Start free'}
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-6 text-center text-xs text-gray-400">No credit card required to start · Cancel anytime</p>
+      </div>
+    </section>
+  );
+}
 
 const FEATURES = [
   {
@@ -150,6 +208,12 @@ export function LandingPage() {
           <LogoMark />
 
           <nav className="flex items-center gap-2 sm:gap-3">
+            <a
+              href="#pricing"
+              className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-3 py-2"
+            >
+              Pricing
+            </a>
             <Link
               to="/login"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-3 py-2"
@@ -338,6 +402,9 @@ export function LandingPage() {
           </div>
         </section>
 
+        {/* ── Pricing ── */}
+        <PricingSection />
+
         {/* ── Final CTA ── */}
         <section className="py-20 px-4 bg-gradient-to-b from-white to-indigo-50">
           <div className="max-w-2xl mx-auto text-center">
@@ -406,6 +473,7 @@ export function LandingPage() {
             <div>
               <h4 className="text-white text-sm font-semibold mb-3">Product</h4>
               <ul className="space-y-2 text-sm">
+                <li><a href="/#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><Link to="/register" className="hover:text-white transition-colors">Get started</Link></li>
                 <li><Link to="/login" className="hover:text-white transition-colors">Sign in</Link></li>
               </ul>
