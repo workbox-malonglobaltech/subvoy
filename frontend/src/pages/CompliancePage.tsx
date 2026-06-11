@@ -5,6 +5,7 @@ import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
 import { formatNative } from '../utils/currency';
+import { daysUntil } from '../lib/date';
 import { supabase } from '../lib/supabase';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
@@ -27,10 +28,6 @@ const STATUS_PILL: Record<ComplianceStatus, string> = {
   completed: 'bg-green-100 text-green-700',
 };
 
-function daysUntil(dateStr: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr).getTime() - today.getTime()) / 86_400_000);
-}
 
 function dueLabel(item: ComplianceItem): { text: string; cls: string } {
   if (item.status === 'completed') return { text: 'Completed', cls: 'text-green-600' };
