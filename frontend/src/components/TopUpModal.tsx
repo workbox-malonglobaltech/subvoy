@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 import type { WalletTopUpInput } from '../../../src/shared/types';
+import { Modal } from './ui/Modal';
 
 interface Props {
   onClose: () => void;
@@ -81,29 +82,8 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="topup-title"
-    >
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 id="topup-title" className="text-lg font-semibold text-gray-900">Fund Wallet</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-5">
+    <Modal open onClose={onClose} title="Fund Wallet" className="max-w-md">
+        <div className="space-y-5">
 
           {/* Destination toggle */}
           <div>
@@ -250,7 +230,6 @@ export function TopUpModal({ onClose, onSubmit }: Props) {
           )}
 
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
