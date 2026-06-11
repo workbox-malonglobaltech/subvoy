@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
+import { Modal } from '../../components/ui/Modal';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
 import { useAdminNotifications } from '../../hooks/useAdminNotifications';
 import { useAuth } from '../../contexts/AuthContext';
@@ -63,21 +64,7 @@ function ChangeRoleModal({ user, onClose, onConfirm }: ChangeRoleModalProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="change-role-title"
-    >
-      <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
-        onClick={e => e.stopPropagation()}
-      >
-        <h3 id="change-role-title" className="font-semibold text-gray-900 mb-1">
-          Change Role
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">{user.email}</p>
+    <Modal open onClose={onClose} title="Change Role" description={user.email} className="max-w-sm">
         <form onSubmit={handleSubmit}>
           <select
             value={role}
@@ -106,8 +93,7 @@ function ChangeRoleModal({ user, onClose, onConfirm }: ChangeRoleModalProps) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -131,21 +117,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm }: DeleteConfirmProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-user-title"
-    >
-      <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
-        onClick={e => e.stopPropagation()}
-      >
-        <h3 id="delete-user-title" className="font-semibold text-gray-900 mb-2">
-          Delete user?
-        </h3>
-        <p className="text-sm text-gray-500 mb-1">{user.name ?? user.email}</p>
+    <Modal open onClose={onClose} title="Delete user?" description={user.name ?? user.email} className="max-w-sm">
         <p className="text-sm text-red-600 mb-5">This action cannot be undone.</p>
         <div className="flex gap-3">
           <button
@@ -162,8 +134,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm }: DeleteConfirmProps) {
             {deleting ? 'Deleting…' : 'Delete'}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

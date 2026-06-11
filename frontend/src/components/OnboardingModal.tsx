@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { markWelcomeSeen } from '../hooks/useOnboarding';
+import { Modal } from './ui/Modal';
 
 interface Props {
   userName: string | null;
@@ -66,16 +67,7 @@ export function OnboardingModal({ userName, onClose, onAddSubscription }: Props)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="onboarding-heading"
-    >
-      <div
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+    <Modal open onClose={handleClose} title="Welcome to Subvoy" bare className="max-w-md rounded-3xl bg-surface shadow-modal">
         {/* Progress bar */}
         <div className="h-1 bg-gray-100">
           <div
@@ -134,7 +126,6 @@ export function OnboardingModal({ userName, onClose, onAddSubscription }: Props)
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
