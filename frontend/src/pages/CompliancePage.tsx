@@ -5,6 +5,7 @@ import { useCompliance } from '../hooks/useCompliance';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
+import { formatNative } from '../utils/currency';
 import {
   ComplianceItem,
   CreateComplianceItemInput,
@@ -146,8 +147,13 @@ export function CompliancePage() {
                           <span>· 👤 {memberNames[item.assigneeUserId]}</span>
                         )}
                       </div>
-                      {item.penaltyNote && (
-                        <p className="text-xs text-red-500 mt-1">Late penalty: {item.penaltyNote}</p>
+                      {(item.penaltyAmount != null || item.penaltyNote) && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Late penalty:{' '}
+                          {item.penaltyAmount != null && formatNative(item.penaltyAmount, item.penaltyCurrency ?? 'USD')}
+                          {item.penaltyAmount != null && item.penaltyNote ? ' — ' : ''}
+                          {item.penaltyNote ?? ''}
+                        </p>
                       )}
                     </div>
                     <span className="text-xs text-gray-400 shrink-0">

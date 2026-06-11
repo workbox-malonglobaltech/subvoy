@@ -29,6 +29,8 @@ const createSchema = z.object({
   dueDate: z.string().regex(dateRegex, 'Date must be YYYY-MM-DD'),
   reminderOffsets: offsets.optional(),
   penaltyNote: z.string().max(1000).optional(),
+  penaltyAmount: z.number().positive().nullable().optional(),
+  penaltyCurrency: z.string().length(3).optional(),
   assigneeUserId: z.string().uuid().nullable().optional(),
 });
 

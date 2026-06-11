@@ -86,6 +86,9 @@ export interface ComplianceItem {
   reminderOffsets: number[];
   status: ComplianceStatus;
   penaltyNote: string | null;
+  /** Monetary penalty for late filing + its currency (independent of subscriptions). */
+  penaltyAmount: number | null;
+  penaltyCurrency: string | null;
   isActive: boolean;
   /** Workspace member responsible for this obligation; reminders target them */
   assigneeUserId: string | null;
@@ -105,6 +108,8 @@ export interface CreateComplianceItemInput {
   dueDate: string;
   reminderOffsets?: number[];
   penaltyNote?: string;
+  penaltyAmount?: number | null;
+  penaltyCurrency?: string;
   assigneeUserId?: string | null;
 }
 
@@ -119,6 +124,8 @@ export interface UpdateComplianceItemInput {
   reminderOffsets?: number[];
   status?: ComplianceStatus;
   penaltyNote?: string;
+  penaltyAmount?: number | null;
+  penaltyCurrency?: string;
   isActive?: boolean;
   assigneeUserId?: string | null;
 }
