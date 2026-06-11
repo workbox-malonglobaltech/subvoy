@@ -177,7 +177,7 @@ export function AdminErrorsPage() {
                   [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
                 ) : errors.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400 text-sm">
+                    <td colSpan={7} className="px-4 py-12 text-center text-fg-subtle text-sm">
                       No errors found
                     </td>
                   </tr>

@@ -186,7 +186,7 @@ export function ImportPage() {
                   </svg>
                 </div>
                 <p className="font-semibold text-gray-700">Drop your CSV here or <span className="text-indigo-600">browse</span></p>
-                <p className="text-xs text-gray-400 mt-1">Supports exports from most banks · Max 5 MB</p>
+                <p className="text-xs text-fg-subtle mt-1">Supports exports from most banks · Max 5 MB</p>
               </>
             )}
           </div>
@@ -231,7 +231,7 @@ export function ImportPage() {
                 </p>
               </div>
               <button onClick={() => { setItems([]); setTxCount(null); setAllDone(false); }}
-                className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                className="text-sm text-fg-subtle hover:text-gray-600 transition-colors">
                 Upload another
               </button>
             </div>
@@ -267,7 +267,7 @@ export function ImportPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-gray-900">{formatCurrency(sub.amount, sub.currency)}</p>
-                      <p className="text-xs text-gray-400">{CYCLE_LABEL[sub.billingCycle] ?? '/mo'}</p>
+                      <p className="text-xs text-fg-subtle">{CYCLE_LABEL[sub.billingCycle] ?? '/mo'}</p>
                     </div>
                   </div>
 
@@ -288,7 +288,7 @@ export function ImportPage() {
                     <p className="mt-3 text-xs text-green-600 font-medium">✓ Added to your subscriptions</p>
                   )}
                   {status === 'dismissed' && (
-                    <p className="mt-3 text-xs text-gray-400">Dismissed</p>
+                    <p className="mt-3 text-xs text-fg-subtle">Dismissed</p>
                   )}
                 </div>
               ))}

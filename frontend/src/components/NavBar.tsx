@@ -127,7 +127,7 @@ export function NavBar({ actions }: NavBarProps) {
                 }`}
               >
                 <svg
-                  className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-600' : 'text-gray-400'}`}
+                  className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-600' : 'text-fg-subtle'}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -205,7 +205,7 @@ export function NavBar({ actions }: NavBarProps) {
                 role="menuitem"
               >
                 <svg
-                  className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-600' : 'text-gray-400'}`}
+                  className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-600' : 'text-fg-subtle'}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -224,7 +224,7 @@ export function NavBar({ actions }: NavBarProps) {
               onClick={() => setMenuOpen(false)}
               role="menuitem"
             >
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              <svg className="w-4 h-4 text-fg-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

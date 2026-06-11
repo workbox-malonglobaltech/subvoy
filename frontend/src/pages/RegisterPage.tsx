@@ -52,7 +52,7 @@ export function RegisterPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-xs text-gray-400">
+            <div className="relative flex justify-center text-xs text-fg-subtle">
               <span className="bg-white px-2">or continue with email</span>
             </div>
           </div>
@@ -60,7 +60,7 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-gray-400 font-normal">(optional)</span>
+                Name <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <input
                 id="name"

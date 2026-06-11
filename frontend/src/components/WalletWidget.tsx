@@ -34,7 +34,7 @@ export function WalletWidget() {
         <div className="px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
           {/* USD balance */}
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide">USD Card</p>
+            <p className="text-xs text-fg-subtle uppercase tracking-wide">USD Card</p>
             <p className="text-lg font-bold text-gray-900">
               ${wallet.usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -44,7 +44,7 @@ export function WalletWidget() {
 
           {/* NGN balance */}
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide">NGN Balance</p>
+            <p className="text-xs text-fg-subtle uppercase tracking-wide">NGN Balance</p>
             <p className="text-lg font-bold text-gray-900">
               ₦{wallet.ngnBalance.toLocaleString('en-NG')}
             </p>

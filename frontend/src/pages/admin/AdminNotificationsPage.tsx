@@ -83,7 +83,7 @@ export function AdminNotificationsPage() {
         ) : notifications.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
             <div className="text-4xl mb-3" aria-hidden="true">🔔</div>
-            <p className="text-gray-400 text-sm">No notifications</p>
+            <p className="text-fg-subtle text-sm">No notifications</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -107,7 +107,7 @@ export function AdminNotificationsPage() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold text-sm text-gray-900 truncate">{notif.title}</p>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-gray-400">{timeAgo(notif.createdAt)}</span>
+                        <span className="text-xs text-fg-subtle">{timeAgo(notif.createdAt)}</span>
                         {!notif.readAt && (
                           <span
                             className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"

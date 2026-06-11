@@ -49,7 +49,7 @@ export function NotificationsPage() {
           </div>
         ) : notifications.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-400 text-sm">No notifications yet</p>
+            <p className="text-fg-subtle text-sm">No notifications yet</p>
           </div>
         ) : (
           <ul className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100 overflow-hidden">
@@ -64,7 +64,7 @@ export function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm ${!n.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{n.title}</p>
                       <p className="text-sm text-gray-500 mt-0.5">{n.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-xs text-fg-subtle mt-1">{timeAgo(n.createdAt)}</p>
                     </div>
                     {!n.isRead && <span className="mt-1 w-2 h-2 rounded-full bg-indigo-500 shrink-0" aria-label="unread" />}
                   </div>

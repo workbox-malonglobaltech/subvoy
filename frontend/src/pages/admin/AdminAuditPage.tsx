@@ -18,7 +18,7 @@ function timeAgo(dateStr: string): string {
 
 function JsonBadge({ data }: { data: AuditLog['details'] }) {
   if (!data || Object.keys(data).length === 0) {
-    return <span className="text-gray-400">—</span>;
+    return <span className="text-fg-subtle">—</span>;
   }
 
   const preview = JSON.stringify(data);
@@ -161,7 +161,7 @@ export function AdminAuditPage() {
                   [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-400 text-sm">
+                    <td colSpan={6} className="px-4 py-12 text-center text-fg-subtle text-sm">
                       No audit log entries found
                     </td>
                   </tr>
@@ -187,7 +187,7 @@ export function AdminAuditPage() {
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">
                         {log.ipAddress ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-right text-xs text-fg-subtle whitespace-nowrap">
                         <span title={new Date(log.createdAt).toLocaleString()}>
                           {timeAgo(log.createdAt)}
                         </span>

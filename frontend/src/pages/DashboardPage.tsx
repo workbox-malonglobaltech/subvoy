@@ -366,7 +366,7 @@ export function DashboardPage() {
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly budget · {b.currency}</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {formatNative(b.spend, b.currency)}
-                    <span className="text-gray-400 font-normal"> of {formatNative(b.limit, b.currency)}</span>
+                    <span className="text-fg-subtle font-normal"> of {formatNative(b.limit, b.currency)}</span>
                   </p>
                 </div>
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -378,7 +378,7 @@ export function DashboardPage() {
                     style={{ width: `${Math.min(b.pct, 100)}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5">
+                <p className="text-xs text-fg-subtle mt-1.5">
                   {Math.round(b.pct)}% used
                   {b.pct >= 100
                     ? ' — budget exceeded'
@@ -392,7 +392,7 @@ export function DashboardPage() {
 
         {/* FX rate disclosure */}
         {fxRates && (
-          <p className="text-xs text-gray-400 -mt-6">
+          <p className="text-xs text-fg-subtle -mt-6">
             {fxStale
               ? '⚠ Exchange rates may be outdated — rates are refreshed daily.'
               : `Rates as of ${new Date(fxRates.fetchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · Interbank mid-market rate`
@@ -408,7 +408,7 @@ export function DashboardPage() {
             {/* Search bar + quick add */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -509,7 +509,7 @@ export function DashboardPage() {
                     </button>
                     <button
                       onClick={exitSelectMode}
-                      className="text-xs text-gray-400 hover:text-gray-600 font-medium"
+                      className="text-xs text-fg-subtle hover:text-gray-600 font-medium"
                     >
                       Cancel
                     </button>
@@ -517,7 +517,7 @@ export function DashboardPage() {
                 ) : (
                   <button
                     onClick={() => setSelectMode(true)}
-                    className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                    className="text-xs text-fg-subtle hover:text-gray-600 font-medium transition-colors"
                   >
                     Select
                   </button>
@@ -534,15 +534,15 @@ export function DashboardPage() {
               <EmptyState onAddClick={openAdd} />
             ) : overdue.length === 0 && activeTab === 'overdue' ? (
               <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                <p className="text-gray-400 text-sm">No overdue subscriptions.</p>
+                <p className="text-fg-subtle text-sm">No overdue subscriptions.</p>
               </div>
             ) : paused.length === 0 && activeTab === 'paused' ? (
               <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                <p className="text-gray-400 text-sm">No paused subscriptions.</p>
+                <p className="text-fg-subtle text-sm">No paused subscriptions.</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                <p className="text-gray-400 text-sm">No subscriptions match your search.</p>
+                <p className="text-fg-subtle text-sm">No subscriptions match your search.</p>
                 <button
                   onClick={() => { setSearch(''); setCategoryFilter('All'); }}
                   className="mt-2 text-sm text-indigo-600 font-medium hover:text-indigo-700"
@@ -595,7 +595,7 @@ export function DashboardPage() {
                   <Link to="/compliance" className="text-xs text-indigo-600 font-medium hover:text-indigo-800">View all →</Link>
                 </div>
                 {complianceItems.length === 0 ? (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-fg-subtle">
                     No obligations yet. <Link to="/compliance" className="text-indigo-600 font-medium hover:text-indigo-800">Add one</Link>
                   </p>
                 ) : (
@@ -609,12 +609,12 @@ export function DashboardPage() {
                           <li key={item.id} className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate max-w-[140px]">{item.title}</p>
-                              <p className="text-xs text-gray-400 truncate max-w-[140px]">{item.authority ?? 'Obligation'}</p>
+                              <p className="text-xs text-fg-subtle truncate max-w-[140px]">{item.authority ?? 'Obligation'}</p>
                             </div>
                             <span className={`text-xs font-medium shrink-0 ${
                               item.status === 'completed' ? 'text-emerald-600'
                               : item.overdue ? 'text-red-600'
-                              : d <= 7 ? 'text-amber-600' : 'text-gray-400'
+                              : d <= 7 ? 'text-amber-600' : 'text-fg-subtle'
                             }`}>
                               {item.status === 'completed' ? 'Done'
                                 : item.overdue ? `${Math.abs(d)}d overdue`
@@ -632,7 +632,7 @@ export function DashboardPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
               <h2 className="text-sm font-semibold text-gray-700 mb-4">Spend by category</h2>
               {!summary || summary.byCategory.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">No data yet</p>
+                <p className="text-sm text-fg-subtle text-center py-6">No data yet</p>
               ) : (
                 <>
                   <ResponsiveContainer width="100%" height={160}>
@@ -676,7 +676,7 @@ export function DashboardPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
               <h2 className="text-sm font-semibold text-gray-700 mb-3">Due soon</h2>
               {upcoming.slice(0, 5).length === 0 ? (
-                <p className="text-sm text-gray-400">Nothing due in the next 30 days</p>
+                <p className="text-sm text-fg-subtle">Nothing due in the next 30 days</p>
               ) : (
                 <ul className="space-y-3">
                   {upcoming.slice(0, 5).map(sub => {
@@ -691,7 +691,7 @@ export function DashboardPage() {
                           <p className={`text-xs font-medium ${
                             days < 0 ? 'text-red-600' :
                             days === 0 ? 'text-red-500' :
-                            days <= 3  ? 'text-amber-600' : 'text-gray-400'
+                            days <= 3  ? 'text-amber-600' : 'text-fg-subtle'
                           }`}>
                             {days < 0
                               ? `${Math.abs(days)}d overdue`

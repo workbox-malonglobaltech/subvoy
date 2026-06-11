@@ -50,14 +50,14 @@ export function WorkspaceSwitcher() {
           aria-hidden="true"
         />
         <span className="truncate">{active.name}</span>
-        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-4 h-4 text-fg-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
         <div className="absolute left-0 mt-1 w-64 bg-white rounded-xl border border-gray-200 shadow-lg py-1.5 z-40" role="menu">
-          <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Workspaces</p>
+          <p className="px-3 py-1 text-xs font-semibold text-fg-subtle uppercase tracking-wide">Workspaces</p>
           {workspaces.map(w => (
             <button
               key={w.id}
@@ -70,7 +70,7 @@ export function WorkspaceSwitcher() {
                 aria-hidden="true"
               />
               <span className="flex-1 truncate text-gray-800">{w.name}</span>
-              <span className="text-[10px] uppercase tracking-wide text-gray-400">{w.type}</span>
+              <span className="text-[10px] uppercase tracking-wide text-fg-subtle">{w.type}</span>
               {w.id === active.id && (
                 <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

@@ -136,7 +136,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label htmlFor="sub-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Service name <span className="text-gray-400 font-normal">(business, e.g. Namecheap)</span>
+                Service name <span className="text-fg-subtle font-normal">(business, e.g. Namecheap)</span>
               </label>
               <input
                 id="sub-name"
@@ -151,7 +151,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
 
             <div>
               <label htmlFor="sub-service" className="block text-sm font-medium text-gray-700 mb-1">
-                Service <span className="text-gray-400 font-normal">(optional)</span>
+                Service <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <input
                 id="sub-service"
@@ -165,7 +165,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
 
             <div>
               <label htmlFor="sub-website" className="block text-sm font-medium text-gray-700 mb-1">
-                Reference <span className="text-gray-400 font-normal">(optional)</span>
+                Reference <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <input
                 id="sub-website"
@@ -211,7 +211,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
                 if (!isNaN(parsed) && parsed > 0 && currency !== 'NGN' && fxRates) {
                   const { secondary } = formatSubscriptionAmount(parsed, currency, fxRates);
                   if (secondary) return (
-                    <p className="mt-1 text-xs text-gray-400">{secondary} at today's rate</p>
+                    <p className="mt-1 text-xs text-fg-subtle">{secondary} at today's rate</p>
                   );
                 }
                 return null;
@@ -304,7 +304,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
 
             <div className="sm:col-span-2">
               <label htmlFor="sub-notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Notes <span className="text-gray-400 font-normal">(optional)</span>
+                Notes <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
               <textarea
                 id="sub-notes"
@@ -337,7 +337,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
               {autopay && (
                 <div className="mt-3 pl-7">
                   <label htmlFor="sub-autopay-max" className="block text-xs font-medium text-gray-600 mb-1">
-                    Don’t auto-pay if the amount exceeds <span className="text-gray-400">(optional cap)</span>
+                    Don’t auto-pay if the amount exceeds <span className="text-fg-subtle">(optional cap)</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">{currency}</span>

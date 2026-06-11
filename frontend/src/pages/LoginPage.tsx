@@ -58,7 +58,7 @@ export function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-xs text-gray-400">
+            <div className="relative flex justify-center text-xs text-fg-subtle">
               <span className="bg-white px-2">or continue with email</span>
             </div>
           </div>

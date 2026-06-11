@@ -66,7 +66,7 @@ export function AnalyticsPage() {
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">YTD Spend</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(ytdSpend)}</p>
-                <p className="text-xs text-gray-400 mt-1">{currentYear} so far</p>
+                <p className="text-xs text-fg-subtle mt-1">{currentYear} so far</p>
               </div>
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Monthly avg</p>
@@ -77,14 +77,14 @@ export function AnalyticsPage() {
                       : 0
                   )}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Across active months</p>
+                <p className="text-xs text-fg-subtle mt-1">Across active months</p>
               </div>
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Top category</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900 truncate">
                   {maxCategory?.category || '—'}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-fg-subtle mt-1">
                   {maxCategory?.total ? formatCurrency(maxCategory.total) + '/mo' : 'No data yet'}
                 </p>
               </div>
@@ -96,7 +96,7 @@ export function AnalyticsPage() {
           {/* Monthly bar chart */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-gray-700 mb-1">Monthly Spend</h2>
-            <p className="text-xs text-gray-400 mb-5">Last 12 months · current month highlighted</p>
+            <p className="text-xs text-fg-subtle mb-5">Last 12 months · current month highlighted</p>
             {error ? (
               <p className="text-sm text-red-500 py-8 text-center">{error}</p>
             ) : loading ? (
@@ -122,7 +122,7 @@ export function AnalyticsPage() {
                 ))}
               </div>
             ) : !summary || summary.byCategory.length === 0 ? (
-              <p className="text-sm text-gray-400 py-8 text-center">No data yet</p>
+              <p className="text-sm text-fg-subtle py-8 text-center">No data yet</p>
             ) : (
               <div className="space-y-3">
                 {summary.byCategory.map((cat, i) => {
@@ -153,7 +153,7 @@ export function AnalyticsPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-1">
             {isBusiness ? 'Upcoming Deadlines' : 'Upcoming Payments'}
           </h2>
-          <p className="text-xs text-gray-400 mb-5">
+          <p className="text-xs text-fg-subtle mb-5">
             {isBusiness ? 'Payments and compliance, by due date' : 'Based on next billing dates'}
           </p>
           <CalendarView subscriptions={subscriptions} complianceItems={complianceItems} />

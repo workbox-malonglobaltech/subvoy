@@ -46,7 +46,7 @@ export function AcceptInvitePage() {
     </div>
   );
 
-  if (loading || authLoading) return wrap(<p className="text-sm text-gray-400">Loading invitation…</p>);
+  if (loading || authLoading) return wrap(<p className="text-sm text-fg-subtle">Loading invitation…</p>);
   if (error || !invite) return wrap(<p className="text-sm text-red-600">{error ?? 'Invitation not found.'}</p>);
 
   if (!invite.valid) {

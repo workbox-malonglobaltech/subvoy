@@ -88,7 +88,7 @@ function ImapModal({ onClose, onScanComplete }: ImapModalProps) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-900">Connect Email</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-fg-subtle hover:text-gray-600 p-1 rounded-lg transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -126,7 +126,7 @@ function ImapModal({ onClose, onScanComplete }: ImapModalProps) {
               <button
                 type="button"
                 onClick={() => setShowPassword(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-gray-600"
               >
                 {showPassword ? (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +175,7 @@ function ImapModal({ onClose, onScanComplete }: ImapModalProps) {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-gray-400">
+        <p className="mt-4 text-center text-xs text-fg-subtle">
           Your password is used only for this scan and is never stored.
         </p>
       </div>
@@ -334,7 +334,7 @@ export function EmailImportPage() {
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">Gmail</p>
                   {gmailConnected && gmailConnection?.email && (
-                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{gmailConnection.email}</p>
+                    <p className="text-xs text-fg-subtle truncate max-w-[140px]">{gmailConnection.email}</p>
                   )}
                 </div>
                 {gmailConnected && (
@@ -372,7 +372,7 @@ export function EmailImportPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">Other Email</p>
-                  <p className="text-xs text-gray-400">Yahoo, Outlook, custom domain…</p>
+                  <p className="text-xs text-fg-subtle">Yahoo, Outlook, custom domain…</p>
                 </div>
               </div>
 
@@ -411,7 +411,7 @@ export function EmailImportPage() {
                 ) : 'Scan emails'}
               </button>
               {emailCount !== null && !scanning && (
-                <p className="text-xs text-gray-400 mt-3">{emailCount} emails analysed</p>
+                <p className="text-xs text-fg-subtle mt-3">{emailCount} emails analysed</p>
               )}
             </div>
           )}
@@ -474,7 +474,7 @@ export function EmailImportPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-bold text-gray-900">{formatCurrency(sub.amount, sub.currency)}</p>
-                        <p className="text-xs text-gray-400">{CYCLE_LABEL[sub.billingCycle] ?? '/mo'}</p>
+                        <p className="text-xs text-fg-subtle">{CYCLE_LABEL[sub.billingCycle] ?? '/mo'}</p>
                       </div>
                     </div>
 
@@ -500,7 +500,7 @@ export function EmailImportPage() {
                       <p className="mt-3 text-xs text-green-600 font-medium">✓ Added to your subscriptions</p>
                     )}
                     {status === 'dismissed' && (
-                      <p className="mt-3 text-xs text-gray-400">Dismissed</p>
+                      <p className="mt-3 text-xs text-fg-subtle">Dismissed</p>
                     )}
                   </div>
                 ))}

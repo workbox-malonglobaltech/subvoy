@@ -281,7 +281,7 @@ export function AdminUsersPage() {
           </div>
           <div className="relative w-full sm:w-64">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none"
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -338,7 +338,7 @@ export function AdminUsersPage() {
                   <tr>
                     <td
                       colSpan={isSuperAdmin ? 8 : 7}
-                      className="px-4 py-12 text-center text-gray-400 text-sm"
+                      className="px-4 py-12 text-center text-fg-subtle text-sm"
                     >
                       No users found
                     </td>
