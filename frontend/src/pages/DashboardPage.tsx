@@ -13,6 +13,7 @@ import { useWallet } from '../hooks/useWallet';
 import { useOnboarding, isWelcomeSeen, markWelcomeSeen } from '../hooks/useOnboarding';
 import { SubscriptionCard } from '../components/SubscriptionCard';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
+import { StatCard } from '../components/ui/StatCard';
 import { SubscriptionModal } from '../components/SubscriptionModal';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -341,17 +342,7 @@ export function DashboardPage() {
                 { label: 'Active subs',   value: String(summary?.activeCount ?? 0), trend: null as number | null },
                 { label: 'Due this week', value: String(summary?.due7Days ?? 0), trend: null as number | null },
               ].map(card => (
-                <div key={card.label} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{card.label}</p>
-                  <div className="mt-2 text-2xl font-bold text-gray-900 leading-tight space-y-0.5">{card.value}</div>
-                  {card.trend !== null && (
-                    <p className={`text-xs mt-1 flex items-center gap-0.5 font-medium ${
-                      card.trend > 0 ? 'text-red-500' : 'text-emerald-600'
-                    }`}>
-                      {card.trend > 0 ? '↑' : '↓'} {Math.abs(card.trend).toFixed(0)}% vs last month
-                    </p>
-                  )}
-                </div>
+                <StatCard key={card.label} label={card.label} value={card.value} trend={card.trend} />
               ))}
             </>
           )}
