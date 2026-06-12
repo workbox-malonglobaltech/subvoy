@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Subscription, CreateSubscriptionInput, BillingCycle } from '../../../src/shared/types';
 import { api } from '../lib/api';
+import { WALLET_ENABLED } from '../lib/features';
 import { useFxRates } from '../hooks/useFxRates';
 import { SUPPORTED_CURRENCIES, formatSubscriptionAmount } from '../utils/currency';
 import { Modal } from './ui/Modal';
@@ -78,7 +79,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
       .then(d => setCustomCategories(d.custom))
       .catch(() => {});
     // For new subscriptions, seed the autopay toggle from the user's default.
-    if (!initial) {
+    if (!initial && WALLET_ENABLED) {
       api.get<{ autopayDefault: boolean }>('/wallet/settings')
         .then(s => setAutopay(s.autopayDefault))
         .catch(() => {});
@@ -327,7 +328,8 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
               />
             </div>
 
-            {/* Autopay */}
+            {/* Autopay (gated with the wallet feature) */}
+            {WALLET_ENABLED && (
             <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
               <label htmlFor="sub-autopay" className="flex items-start gap-3 cursor-pointer">
                 <input
@@ -366,6 +368,7 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
                 </div>
               )}
             </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">
