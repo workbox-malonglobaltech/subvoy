@@ -364,14 +364,14 @@ export function DashboardPage() {
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-eyebrow uppercase text-fg-subtle">Active subs</p>
-                      <p className="mt-1.5 text-2xl font-bold tabular-nums text-fg">{summary?.activeCount ?? 0}</p>
+                  <div className="space-y-2.5">
+                    <div className="flex items-baseline gap-2.5">
+                      <span className="w-9 text-2xl font-bold tabular-nums text-fg">{summary?.activeCount ?? 0}</span>
+                      <span className="text-sm text-fg-muted">Active subs</span>
                     </div>
-                    <div>
-                      <p className="text-eyebrow uppercase text-fg-subtle">Due this week</p>
-                      <p className="mt-1.5 text-2xl font-bold tabular-nums text-fg">{summary?.due7Days ?? 0}</p>
+                    <div className="flex items-baseline gap-2.5">
+                      <span className="w-9 text-2xl font-bold tabular-nums text-fg">{summary?.due7Days ?? 0}</span>
+                      <span className="text-sm text-fg-muted">Due this week</span>
                     </div>
                   </div>
                 </div>
