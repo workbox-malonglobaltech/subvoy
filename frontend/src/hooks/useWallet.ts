@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { WALLET_ENABLED } from '../lib/features';
 import type { Wallet, WalletTransaction, WalletSettings, WalletTopUpInput } from '../../../src/shared/types';
 
 interface WalletState {
@@ -26,6 +27,11 @@ export function useWallet(): UseWalletReturn {
   });
 
   const fetchAll = useCallback(async () => {
+    // Wallet endpoints are gated off — don't fire requests that would 404.
+    if (!WALLET_ENABLED) {
+      setState({ wallet: null, transactions: [], settings: null, loading: false, error: null });
+      return;
+    }
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
       const [wallet, transactions, settings] = await Promise.all([
