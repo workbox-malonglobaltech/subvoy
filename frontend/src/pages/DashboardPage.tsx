@@ -20,6 +20,7 @@ import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletChip } from '../components/WalletChip';
 import { AccountMenu } from '../components/AccountMenu';
+import { NotificationBell } from '../components/NotificationBell';
 import { WALLET_ENABLED } from '../lib/features';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
@@ -135,16 +136,17 @@ export function DashboardPage() {
   // Native per-currency spend totals (no conversion). Primary = highest monthly.
   const byCurrency = summary?.byCurrency ?? [];
   const primary = byCurrency[0] ?? null;
-  // Horizontal per-currency (e.g. "$41.00 USD   ₦363,333 NGN"), no conversion.
+  // Per-currency side-by-side with a divider (e.g. "$41.00 | ₦363,333"), no wrap,
+  // no conversion. Smaller weight than the 2xl wrapper so wide ₦ values fit.
   const spendLines = (kind: 'monthlySpend' | 'yearlySpend') =>
     byCurrency.length === 0
       ? <span>—</span>
       : (
-        <div className="flex flex-wrap items-end gap-x-5 gap-y-1">
-          {byCurrency.map(c => (
-            <div key={c.currency} className="flex flex-col">
-              <span className="leading-none">{formatNative(c[kind], c.currency)}</span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-fg-subtle">{c.currency}</span>
+        <div className="flex items-stretch divide-x divide-line">
+          {byCurrency.map((c, i) => (
+            <div key={c.currency} className={i === 0 ? 'pr-3.5' : 'px-3.5'}>
+              <span className="block whitespace-nowrap text-xl font-bold leading-none">{formatNative(c[kind], c.currency)}</span>
+              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-fg-subtle">{c.currency}</span>
             </div>
           ))}
         </div>
@@ -298,13 +300,14 @@ export function DashboardPage() {
 
   return (
     <>
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
 
         {/* Page header — title + compact wallet + profile */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-h1 text-fg">Dashboard</h1>
           <div className="flex items-center gap-3">
             {WALLET_ENABLED && <WalletChip />}
+            <NotificationBell />
             <AccountMenu />
           </div>
         </div>
@@ -413,10 +416,10 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
           {/* Subscription list */}
-          <section className="lg:col-span-2 space-y-4" aria-label="Your subscriptions">
+          <section className="lg:col-span-3 space-y-4" aria-label="Your subscriptions">
 
             {/* Search bar + quick add */}
             <div className="flex items-center gap-2">
@@ -564,7 +567,7 @@ export function DashboardPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filtered.map(sub => (
                   <SubscriptionCard
                     key={sub.id}
