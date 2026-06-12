@@ -13,6 +13,7 @@ import { useOnboarding, isWelcomeSeen, markWelcomeSeen } from '../hooks/useOnboa
 import { SubscriptionCard } from '../components/SubscriptionCard';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
 import { StatCard } from '../components/ui/StatCard';
+import { ProgressRing } from '../components/ui/ProgressRing';
 import { SubscriptionModal } from '../components/SubscriptionModal';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -143,6 +144,8 @@ export function DashboardPage() {
   const budgetBars = (notifPrefs?.budgetAlertEnabled ? byCurrency : [])
     .map(c => ({ currency: c.currency, spend: c.monthlySpend, limit: notifPrefs?.budgetLimits?.[c.currency] ?? 0 }))
     .map(c => ({ ...c, pct: c.limit > 0 ? (c.spend / c.limit) * 100 : 0 }));
+  // Headline ring uses the first currency that actually has a budget set.
+  const ringBudget = budgetBars.find(b => b.limit > 0);
 
   const filtered = useMemo(() => {
     let base: Subscription[];
@@ -356,27 +359,25 @@ export function DashboardPage() {
                       Set a budget →
                     </Link>
                   ) : (
-                    <div className="mt-2 space-y-2.5">
-                      {budgetBars.map(b => (
-                        <div key={b.currency}>
-                          <div className="flex items-baseline justify-between gap-1 text-xs">
-                            <span className="font-semibold text-fg tabular-nums">{formatNative(b.spend, b.currency)}</span>
-                            {b.limit > 0
-                              ? <span className="text-fg-subtle whitespace-nowrap">/ {formatNative(b.limit, b.currency)}</span>
-                              : <Link to="/settings" className="font-medium text-primary hover:text-primary-700 whitespace-nowrap">Set →</Link>}
-                          </div>
-                          {b.limit > 0 && (
-                            <div className="mt-1 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                  b.pct >= 100 ? 'bg-error-500' : b.pct >= 75 ? 'bg-warning-400' : 'bg-success-500'
-                                }`}
-                                style={{ width: `${Math.min(b.pct, 100)}%` }}
-                              />
+                    <div className="mt-3 flex items-center gap-3">
+                      {ringBudget && <ProgressRing pct={ringBudget.pct} />}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        {budgetBars.map(b => {
+                          const over = b.limit > 0 && b.spend > b.limit;
+                          return (
+                            <div key={b.currency} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-fg-subtle">{b.currency}</span>
+                              {b.limit > 0 ? (
+                                <span className={`font-medium tabular-nums ${over ? 'text-error-600' : 'text-fg'}`}>
+                                  {over ? `over ${formatNative(b.spend - b.limit, b.currency)}` : `${Math.round(b.pct)}%`}
+                                </span>
+                              ) : (
+                                <Link to="/settings" className="font-medium text-primary hover:text-primary-700">Set →</Link>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
