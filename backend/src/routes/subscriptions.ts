@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/authenticate';
 import { workspaceContext } from '../middleware/workspaceContext';
 import * as subModel from '../models/subscription';
 import { chargeSubscription } from '../services/payment.service';
+import { WALLET_ENABLED } from '../config/features';
 import { getEffectiveLimit, isWithinLimit, UNLIMITED } from '../services/entitlements.service';
 import { pool } from '../db';
 
@@ -207,6 +208,11 @@ router.delete('/:id', async (req: Request, res: Response) => {
  * Returns 402 if the balance is insufficient.
  */
 router.post('/:id/pay', async (req: Request, res: Response) => {
+  // Wallet-funded payment is gated until licensing is in place.
+  if (!WALLET_ENABLED) {
+    res.status(404).json({ success: false, data: null, error: 'Wallet payments are not available' });
+    return;
+  }
   const workspaceId = req.workspace!.id;
   const subId  = req.params.id;
 

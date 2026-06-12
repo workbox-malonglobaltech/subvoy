@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletChip } from '../components/WalletChip';
+import { WALLET_ENABLED } from '../lib/features';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
@@ -293,7 +294,7 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-h1 text-fg">Dashboard</h1>
           <div className="flex items-center gap-3">
-            <WalletChip />
+            {WALLET_ENABLED && <WalletChip />}
             <Link
               to="/settings"
               aria-label="Account settings"
@@ -554,7 +555,7 @@ export function DashboardPage() {
                     onDelete={setDeleteConfirm}
                     onArchive={sub.isActive ? handleArchive : undefined}
                     onRestore={!sub.isActive ? handleRestore : undefined}
-                    onPay={sub.isActive ? handlePay : undefined}
+                    onPay={WALLET_ENABLED && sub.isActive ? handlePay : undefined}
                     selectable={selectMode && sub.isActive}
                     selected={selected.has(sub.id)}
                     onSelect={toggleSelect}
@@ -625,7 +626,7 @@ export function DashboardPage() {
 
             <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
 
-            <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={handlePay} />
+            <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
           </aside>
         </div>
       </main>

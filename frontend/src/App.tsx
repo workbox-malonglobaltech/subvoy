@@ -4,6 +4,7 @@ import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
+import { WALLET_ENABLED } from './lib/features';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SmartRoot } from './components/SmartRoot';
 import { LoginPage } from './pages/LoginPage';
@@ -59,13 +60,13 @@ function App() {
                 <Route path="/import" element={<ImportPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/email-import" element={<EmailImportPage />} />
-                <Route path="/wallet" element={<WalletPage />} />
+                {WALLET_ENABLED && <Route path="/wallet" element={<WalletPage />} />}
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/compliance" element={<CompliancePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/plans" element={<PlansPage />} />
                 <Route path="/billing/callback" element={<BillingCallbackPage />} />
-                <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+                {WALLET_ENABLED && <Route path="/payment/callback" element={<PaymentCallbackPage />} />}
               </Route>
 
               {/* Admin portal */}
