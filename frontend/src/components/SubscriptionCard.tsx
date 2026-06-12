@@ -100,8 +100,8 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
       ${justSaved  ? 'ring-2 ring-green-400 border-green-300' : selected ? 'border-indigo-400 ring-2 ring-indigo-200' : urgencyBorder}
       ${!sub.isActive ? 'opacity-60' : ''}
     `}>
-      <div className="p-5">
-        <div className="flex items-start gap-3">
+      <div className="p-4">
+        <div className="flex items-start gap-2.5">
           {selectable && (
             <input
               type="checkbox"
@@ -113,76 +113,47 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
           )}
           <ServiceLogo name={sub.name} />
 
-          <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 truncate">{sub.name}</h3>
-                {!sub.isActive && (
-                  <Badge tone="neutral" className="shrink-0">Paused</Badge>
-                )}
-              </div>
-              {sub.service && (
-                <p className="text-xs text-gray-500 truncate mt-0.5">{sub.service}</p>
-              )}
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {sub.category && (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor}`}>
-                    {sub.category}
-                  </span>
-                )}
-                {sub.website && (
-                  // Linkify only if it looks like a URL/domain; otherwise show the
-                  // reference (tag, address, note) as plain text.
-                  (/^https?:\/\//i.test(sub.website) || (/\.[a-z]{2,}/i.test(sub.website) && !/\s/.test(sub.website))) ? (
-                    <a
-                      href={/^https?:\/\//i.test(sub.website) ? sub.website : `https://${sub.website}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={e => e.stopPropagation()}
-                      className="text-xs text-indigo-600 hover:underline truncate max-w-[160px]"
-                    >
-                      {sub.website.replace(/^https?:\/\//i, '')}
-                    </a>
-                  ) : (
-                    <span className="text-xs text-gray-500 truncate max-w-[160px]">{sub.website}</span>
-                  )
-                )}
-                {sub.isActive && (
-                  <span className={`text-xs font-medium ${urgencyText}`}>
-                    {days === 0 ? 'Due today' : days < 0 ? `${Math.abs(days)}d overdue` : `Due in ${days}d`}
-                  </span>
-                )}
-                {sub.isActive && sub.autopay && (
-                  <span
-                    className="shrink-0 inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"
-                    title={sub.autopayMaxAmount != null
-                      ? `Auto-paid from wallet (up to ${sub.currency} ${sub.autopayMaxAmount})`
-                      : 'Auto-paid from wallet on the billing date'}
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    Auto
-                  </span>
-                )}
-              </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h3 className="truncate text-sm font-semibold text-fg">{sub.name}</h3>
+              {!sub.isActive && <Badge tone="neutral" className="shrink-0">Paused</Badge>}
             </div>
-            <div className="text-right shrink-0">
-              <p className="font-bold text-gray-900">{amountPrimary}</p>
-              <p className="text-xs text-fg-subtle">/{CYCLE_LABEL[sub.billingCycle]}</p>
-              {showMonthlyEquiv && (
-                <p className="text-xs text-fg-subtle mt-0.5">
-                  ≈ {formatNative(monthlyEquiv, sub.currency)}/mo
-                </p>
-              )}
-              {amountNgn && (
-                <p className="text-xs text-emerald-600 mt-0.5">{amountNgn}</p>
-              )}
-            </div>
+            {sub.category && (
+              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${catColor}`}>{sub.category}</span>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+        {/* Amount */}
+        <div className="mt-3">
+          <p className="text-lg font-bold leading-none text-fg">
+            {amountPrimary}<span className="text-xs font-medium text-fg-subtle"> /{CYCLE_LABEL[sub.billingCycle]}</span>
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {showMonthlyEquiv && <span className="text-fg-subtle">≈ {formatNative(monthlyEquiv, sub.currency)}/mo</span>}
+            {amountNgn && <span className="text-emerald-600">{amountNgn}</span>}
+          </div>
+        </div>
+
+        {/* Due + autopay */}
+        {sub.isActive && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className={`text-xs font-medium ${urgencyText}`}>
+              {days === 0 ? 'Due today' : days < 0 ? `${Math.abs(days)}d overdue` : `Due in ${days}d`}
+            </span>
+            {sub.autopay && (
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700"
+                title={sub.autopayMaxAmount != null
+                  ? `Auto-paid from wallet (up to ${sub.currency} ${sub.autopayMaxAmount})`
+                  : 'Auto-paid from wallet on the billing date'}>
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Auto
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-line gap-1">
           <div className="flex items-center gap-2">
             <span className="text-xs text-fg-subtle">
               {new Date(sub.nextBillingDate).toLocaleDateString('en-US', {
@@ -192,15 +163,15 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
             {sub.notes && (
               <button
                 onClick={() => setExpanded(prev => !prev)}
-                className="text-xs text-fg-subtle hover:text-fg transition-colors flex items-center gap-0.5"
+                className="rounded-lg p-1 text-fg-subtle transition-colors hover:bg-surface-muted hover:text-fg"
                 aria-label={expanded ? 'Hide notes' : 'Show notes'}
                 aria-expanded={expanded}
+                title="Notes"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Notes
               </button>
             )}
           </div>
