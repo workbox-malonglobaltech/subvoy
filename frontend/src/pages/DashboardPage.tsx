@@ -137,16 +137,11 @@ export function DashboardPage() {
       : <>{byCurrency.map(c => <div key={c.currency}>{formatNative(c[kind], c.currency)}</div>)}</>;
 
   // ── Budget bars — one per currency that has a budget set (native, no conversion) ──
+  // One row per spent currency (e.g. USD + NGN). Currencies without a configured
+  // limit still show, with a "Set →" prompt, so the user can budget each one.
   const budgetBars = (notifPrefs?.budgetAlertEnabled ? byCurrency : [])
     .map(c => ({ currency: c.currency, spend: c.monthlySpend, limit: notifPrefs?.budgetLimits?.[c.currency] ?? 0 }))
-    .filter(c => c.limit > 0)
-    .map(c => ({ ...c, pct: (c.spend / c.limit) * 100 }));
-
-  const daysLeftInMonth = useMemo(() => {
-    const now = new Date();
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    return lastDay - now.getDate();
-  }, []);
+    .map(c => ({ ...c, pct: c.limit > 0 ? (c.spend / c.limit) * 100 : 0 }));
 
   const filtered = useMemo(() => {
     let base: Subscription[];
@@ -335,10 +330,10 @@ export function DashboardPage() {
         {/* Key metrics */}
         <section aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" className="sr-only">Key metrics</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {sumLoading ? (
               <>
-                <StatCardSkeleton /><StatCardSkeleton />
+                <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
                 <StatCardSkeleton /><StatCardSkeleton />
               </>
             ) : (
@@ -351,43 +346,43 @@ export function DashboardPage() {
                 ].map(card => (
                   <StatCard key={card.label} label={card.label} value={card.value} trend={card.trend} />
                 ))}
+
+                {/* 5th cell: monthly budget, one row per currency */}
+                <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+                  <p className="text-eyebrow uppercase text-fg-subtle">Monthly budget</p>
+                  {budgetBars.length === 0 ? (
+                    <Link to="/settings" className="mt-2 inline-block text-sm font-medium text-primary hover:text-primary-700">
+                      Set a budget →
+                    </Link>
+                  ) : (
+                    <div className="mt-2 space-y-2.5">
+                      {budgetBars.map(b => (
+                        <div key={b.currency}>
+                          <div className="flex items-baseline justify-between gap-1 text-xs">
+                            <span className="font-semibold text-fg tabular-nums">{formatNative(b.spend, b.currency)}</span>
+                            {b.limit > 0
+                              ? <span className="text-fg-subtle whitespace-nowrap">/ {formatNative(b.limit, b.currency)}</span>
+                              : <Link to="/settings" className="font-medium text-primary hover:text-primary-700 whitespace-nowrap">Set →</Link>}
+                          </div>
+                          {b.limit > 0 && (
+                            <div className="mt-1 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  b.pct >= 100 ? 'bg-error-500' : b.pct >= 75 ? 'bg-warning-400' : 'bg-success-500'
+                                }`}
+                                style={{ width: `${Math.min(b.pct, 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
         </section>
-
-        {/* Budget progress bars — one per currency with a budget set (no conversion) */}
-        {budgetBars.length > 0 && (
-          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm space-y-4">
-            {budgetBars.map(b => (
-              <div key={b.currency}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly budget · {b.currency}</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatNative(b.spend, b.currency)}
-                    <span className="text-fg-subtle font-normal"> of {formatNative(b.limit, b.currency)}</span>
-                  </p>
-                </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      b.pct >= 100 ? 'bg-red-500' :
-                      b.pct >= 75  ? 'bg-amber-400' : 'bg-emerald-500'
-                    }`}
-                    style={{ width: `${Math.min(b.pct, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-fg-subtle mt-1.5">
-                  {Math.round(b.pct)}% used
-                  {b.pct >= 100
-                    ? ' — budget exceeded'
-                    : ` · ${formatNative(b.limit - b.spend, b.currency)} remaining · ${daysLeftInMonth}d left this month`
-                  }
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* FX rate disclosure */}
         {fxRates && (
