@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { WALLET_ENABLED } from '../lib/features';
 
 // ── localStorage keys ────────────────────────────────────────────────────────
 
@@ -73,13 +74,14 @@ export function useOnboarding({
       done: remindersAcked,
       href: '/settings',
     },
-    {
+    // Wallet funding is gated with the wallet feature.
+    ...(WALLET_ENABLED ? [{
       id: 'wallet',
       label: 'Fund your wallet',
       description: 'Add USD funds to pay subscriptions directly — no more card declines.',
       done: walletLoading ? false : hasWalletFunds,
       href: '/wallet',
-    },
+    } as OnboardingStep] : []),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [hasSubscription, remindersAcked, walletLoading, walletUsd, walletNgn]);
 
