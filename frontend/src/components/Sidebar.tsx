@@ -4,6 +4,7 @@ import { useWorkspace } from '../contexts/WorkspaceContext';
 import { LogoMark } from './LogoMark';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { BASE_NAV_ITEMS, COMPLIANCE_ITEM, NAV_ICONS, NavItem } from './NavBar';
+import { WALLET_ENABLED } from '../lib/features';
 import { cn } from '../lib/cn';
 
 function isActive(to: string, pathname: string): boolean {
@@ -23,9 +24,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { active } = useWorkspace();
   const { pathname } = useLocation();
 
-  const items: NavItem[] = active?.type === 'business'
+  const items: NavItem[] = (active?.type === 'business'
     ? [...BASE_NAV_ITEMS.slice(0, 3), COMPLIANCE_ITEM, ...BASE_NAV_ITEMS.slice(3)]
-    : BASE_NAV_ITEMS;
+    : BASE_NAV_ITEMS
+  ).filter(i => WALLET_ENABLED || i.to !== '/wallet');
 
   return (
     <aside

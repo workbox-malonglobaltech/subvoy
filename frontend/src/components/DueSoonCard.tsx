@@ -6,7 +6,8 @@ interface Props {
   /** Upcoming subscriptions (already filtered/sorted by the dashboard). */
   upcoming: Subscription[];
   fxRates: FxRates | null;
-  onPay: (id: string) => void;
+  /** Omitted when wallet payments are disabled — hides the "Pay now" action. */
+  onPay?: (id: string) => void;
 }
 
 /** Dashboard sidebar panel: next 5 due subscriptions with a quick "Pay now". */
@@ -39,7 +40,7 @@ export function DueSoonCard({ upcoming, fxRates, onPay }: Props) {
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: sub.currency }).format(sub.amount)}
                   </p>
                   {ngnEquiv !== null && <p className="text-xs text-emerald-600">{formatNative(ngnEquiv, 'NGN')}</p>}
-                  {days <= 0 && (
+                  {onPay && days <= 0 && (
                     <button onClick={() => onPay(sub.id)}
                       className="text-xs text-primary hover:text-primary-700 font-semibold transition-colors mt-0.5">
                       Pay now →

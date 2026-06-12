@@ -7,6 +7,7 @@ import { LogoMark } from './LogoMark';
 import { useAuth } from '../contexts/AuthContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { BASE_NAV_ITEMS, COMPLIANCE_ITEM, NAV_ICONS, NavItem } from './NavBar';
+import { WALLET_ENABLED } from '../lib/features';
 import { cn } from '../lib/cn';
 
 const SIDEBAR_KEY = 'subvoy_sidebar_collapsed';
@@ -31,9 +32,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return n;
   });
 
-  const items: NavItem[] = active?.type === 'business'
+  const items: NavItem[] = (active?.type === 'business'
     ? [...BASE_NAV_ITEMS.slice(0, 3), COMPLIANCE_ITEM, ...BASE_NAV_ITEMS.slice(3)]
-    : BASE_NAV_ITEMS;
+    : BASE_NAV_ITEMS
+  ).filter(i => WALLET_ENABLED || i.to !== '/wallet');
 
   const isActive = (to: string) =>
     to === '/' ? pathname === '/'

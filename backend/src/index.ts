@@ -36,6 +36,7 @@ import { startReminderJob } from './jobs/reminder.job';
 import { startFxJob } from './jobs/fx.job';
 import { startWalletJob } from './jobs/wallet.job';
 import { startAutopayJob } from './jobs/autopay.job';
+import { WALLET_ENABLED } from './config/features';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -54,7 +55,10 @@ app.use(cors({
 
 // ── Webhook routes must receive the RAW body for signature verification ───────
 // Mount BEFORE express.json() so the Buffer is preserved.
-app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter);
+// Paystack (wallet funding) webhook — gated with the wallet feature.
+if (WALLET_ENABLED) {
+  app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter);
+}
 app.use('/billing/webhook', express.raw({ type: 'application/json' }), billingWebhookRouter);
 
 app.use(express.json());
@@ -115,7 +119,7 @@ app.use('/auth', authLimiter, forgotPasswordRouter);
 app.use('/categories', categoriesRouter);
 app.use('/auth', oauthRouter);
 app.use('/fx', fxRouter);
-app.use('/wallet', walletRouter);
+if (WALLET_ENABLED) app.use('/wallet', walletRouter);
 app.use('/reports', reportsRouter);
 app.use('/admin', adminRouter);
 app.use(errorHandler);
@@ -129,9 +133,12 @@ if (!isTest) {
   if (process.env.RUN_JOBS !== 'false') {
     startReminderJob();
     startFxJob();
-    startWalletJob();
-    startAutopayJob();
-    console.log('[jobs] background jobs started (RUN_JOBS)');
+    // Money-movement jobs only run when the wallet feature is enabled.
+    if (WALLET_ENABLED) {
+      startWalletJob();
+      startAutopayJob();
+    }
+    console.log(`[jobs] background jobs started (RUN_JOBS)${WALLET_ENABLED ? '' : ' — wallet/autopay jobs gated off'}`);
   } else {
     console.log('[jobs] background jobs disabled on this instance (RUN_JOBS=false)');
   }
