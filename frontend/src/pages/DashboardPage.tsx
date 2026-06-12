@@ -19,6 +19,7 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletChip } from '../components/WalletChip';
+import { AccountMenu } from '../components/AccountMenu';
 import { WALLET_ENABLED } from '../lib/features';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
@@ -284,11 +285,6 @@ export function DashboardPage() {
     setPayConfirm(null);
   }
 
-  // Two-initial avatar from the user's name (falls back to the email initial).
-  const initials = user?.name?.trim()
-    ? user.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase()
-    : (user?.email?.[0] ?? '?').toUpperCase();
-
   return (
     <>
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
@@ -298,14 +294,7 @@ export function DashboardPage() {
           <h1 className="text-h1 text-fg">Dashboard</h1>
           <div className="flex items-center gap-3">
             {WALLET_ENABLED && <WalletChip />}
-            <Link
-              to="/settings"
-              aria-label="Account settings"
-              title={user?.name ?? user?.email ?? 'Account'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-700 transition-colors hover:bg-primary-100"
-            >
-              {initials}
-            </Link>
+            <AccountMenu />
           </div>
         </div>
 
@@ -388,7 +377,7 @@ export function DashboardPage() {
 
         {/* FX rate disclosure */}
         {fxRates && (
-          <p className="text-xs text-fg-subtle">
+          <p className="text-right text-xs text-fg-subtle">
             {fxStale
               ? '⚠ Exchange rates may be outdated — rates are refreshed daily.'
               : `Rates as of ${new Date(fxRates.fetchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · Interbank mid-market rate`
@@ -572,17 +561,6 @@ export function DashboardPage() {
           {/* Sidebar */}
           <aside className="space-y-5" aria-label="Overview">
 
-            {/* Onboarding checklist */}
-            {showChecklist && (
-              <OnboardingChecklist
-                steps={steps}
-                completedCount={completedCount}
-                progress={progress}
-                onDismiss={dismissChecklist}
-                onAddSubscription={openAdd}
-              />
-            )}
-
             {/* Compliance — business workspaces track obligations alongside subscriptions */}
             {isBusiness && (
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
@@ -628,6 +606,17 @@ export function DashboardPage() {
             <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
 
             <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
+
+            {/* Onboarding checklist — kept last so real data leads the rail */}
+            {showChecklist && (
+              <OnboardingChecklist
+                steps={steps}
+                completedCount={completedCount}
+                progress={progress}
+                onDismiss={dismissChecklist}
+                onAddSubscription={openAdd}
+              />
+            )}
           </aside>
         </div>
       </main>
