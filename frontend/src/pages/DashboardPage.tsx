@@ -13,11 +13,13 @@ import { useOnboarding, isWelcomeSeen, markWelcomeSeen } from '../hooks/useOnboa
 import { SubscriptionCard } from '../components/SubscriptionCard';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
 import { StatCard } from '../components/ui/StatCard';
+import { ProgressRing } from '../components/ui/ProgressRing';
 import { SubscriptionModal } from '../components/SubscriptionModal';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { PayConfirmModal } from '../components/PayConfirmModal';
 import { WalletChip } from '../components/WalletChip';
+import { AccountMenu } from '../components/AccountMenu';
 import { WALLET_ENABLED } from '../lib/features';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
@@ -143,6 +145,8 @@ export function DashboardPage() {
   const budgetBars = (notifPrefs?.budgetAlertEnabled ? byCurrency : [])
     .map(c => ({ currency: c.currency, spend: c.monthlySpend, limit: notifPrefs?.budgetLimits?.[c.currency] ?? 0 }))
     .map(c => ({ ...c, pct: c.limit > 0 ? (c.spend / c.limit) * 100 : 0 }));
+  // Headline ring uses the first currency that actually has a budget set.
+  const ringBudget = budgetBars.find(b => b.limit > 0);
 
   const filtered = useMemo(() => {
     let base: Subscription[];
@@ -281,11 +285,6 @@ export function DashboardPage() {
     setPayConfirm(null);
   }
 
-  // Two-initial avatar from the user's name (falls back to the email initial).
-  const initials = user?.name?.trim()
-    ? user.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase()
-    : (user?.email?.[0] ?? '?').toUpperCase();
-
   return (
     <>
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-page-enter">
@@ -295,14 +294,7 @@ export function DashboardPage() {
           <h1 className="text-h1 text-fg">Dashboard</h1>
           <div className="flex items-center gap-3">
             {WALLET_ENABLED && <WalletChip />}
-            <Link
-              to="/settings"
-              aria-label="Account settings"
-              title={user?.name ?? user?.email ?? 'Account'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-700 transition-colors hover:bg-primary-100"
-            >
-              {initials}
-            </Link>
+            <AccountMenu />
           </div>
         </div>
 
@@ -356,27 +348,25 @@ export function DashboardPage() {
                       Set a budget →
                     </Link>
                   ) : (
-                    <div className="mt-2 space-y-2.5">
-                      {budgetBars.map(b => (
-                        <div key={b.currency}>
-                          <div className="flex items-baseline justify-between gap-1 text-xs">
-                            <span className="font-semibold text-fg tabular-nums">{formatNative(b.spend, b.currency)}</span>
-                            {b.limit > 0
-                              ? <span className="text-fg-subtle whitespace-nowrap">/ {formatNative(b.limit, b.currency)}</span>
-                              : <Link to="/settings" className="font-medium text-primary hover:text-primary-700 whitespace-nowrap">Set →</Link>}
-                          </div>
-                          {b.limit > 0 && (
-                            <div className="mt-1 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                  b.pct >= 100 ? 'bg-error-500' : b.pct >= 75 ? 'bg-warning-400' : 'bg-success-500'
-                                }`}
-                                style={{ width: `${Math.min(b.pct, 100)}%` }}
-                              />
+                    <div className="mt-3 flex items-center gap-3">
+                      {ringBudget && <ProgressRing pct={ringBudget.pct} />}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        {budgetBars.map(b => {
+                          const over = b.limit > 0 && b.spend > b.limit;
+                          return (
+                            <div key={b.currency} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-fg-subtle">{b.currency}</span>
+                              {b.limit > 0 ? (
+                                <span className={`font-medium tabular-nums ${over ? 'text-error-600' : 'text-fg'}`}>
+                                  {over ? `over ${formatNative(b.spend - b.limit, b.currency)}` : `${Math.round(b.pct)}%`}
+                                </span>
+                              ) : (
+                                <Link to="/settings" className="font-medium text-primary hover:text-primary-700">Set →</Link>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -387,7 +377,7 @@ export function DashboardPage() {
 
         {/* FX rate disclosure */}
         {fxRates && (
-          <p className="text-xs text-fg-subtle">
+          <p className="text-right text-xs text-fg-subtle">
             {fxStale
               ? '⚠ Exchange rates may be outdated — rates are refreshed daily.'
               : `Rates as of ${new Date(fxRates.fetchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · Interbank mid-market rate`
@@ -413,7 +403,7 @@ export function DashboardPage() {
                   placeholder="Search subscriptions…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-line bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                   aria-label="Search subscriptions"
                 />
               </div>
@@ -433,8 +423,8 @@ export function DashboardPage() {
                     onClick={() => setCategoryFilter(cat)}
                     className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       categoryFilter === cat
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+                        ? 'bg-primary text-primary-fg shadow-sm'
+                        : 'bg-surface border border-line text-fg-muted hover:border-primary/40 hover:text-primary'
                     }`}
                     aria-pressed={categoryFilter === cat}
                   >
@@ -446,7 +436,7 @@ export function DashboardPage() {
 
             {/* Tab toggle + bulk controls */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Subscription filter">
+              <div className="flex gap-1 bg-surface-muted rounded-lg p-1" role="tablist" aria-label="Subscription filter">
                 {(['all', 'overdue', 'upcoming', 'paused'] as Tab[]).map(tab => (
                   <button
                     key={tab}
@@ -455,8 +445,8 @@ export function DashboardPage() {
                     onClick={() => { setActiveTab(tab); exitSelectMode(); }}
                     className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize flex items-center gap-1.5 ${
                       activeTab === tab
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-surface text-fg shadow-sm'
+                        : 'text-fg-subtle hover:text-fg'
                     }`}
                   >
                     {tab === 'all' && `All (${active.length})`}
@@ -464,7 +454,7 @@ export function DashboardPage() {
                       <>
                         Overdue
                         {overdue.length > 0 && (
-                          <span className="rounded-full bg-red-100 text-red-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
+                          <span className="rounded-full bg-error-50 text-error-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
                             {overdue.length}
                           </span>
                         )}
@@ -474,7 +464,7 @@ export function DashboardPage() {
                       <>
                         Upcoming
                         {upcoming.length > 0 && (
-                          <span className="rounded-full bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
+                          <span className="rounded-full bg-primary-50 text-primary-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
                             {upcoming.length}
                           </span>
                         )}
@@ -571,17 +561,6 @@ export function DashboardPage() {
           {/* Sidebar */}
           <aside className="space-y-5" aria-label="Overview">
 
-            {/* Onboarding checklist */}
-            {showChecklist && (
-              <OnboardingChecklist
-                steps={steps}
-                completedCount={completedCount}
-                progress={progress}
-                onDismiss={dismissChecklist}
-                onAddSubscription={openAdd}
-              />
-            )}
-
             {/* Compliance — business workspaces track obligations alongside subscriptions */}
             {isBusiness && (
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
@@ -627,6 +606,17 @@ export function DashboardPage() {
             <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
 
             <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
+
+            {/* Onboarding checklist — kept last so real data leads the rail */}
+            {showChecklist && (
+              <OnboardingChecklist
+                steps={steps}
+                completedCount={completedCount}
+                progress={progress}
+                onDismiss={dismissChecklist}
+                onAddSubscription={openAdd}
+              />
+            )}
           </aside>
         </div>
       </main>
