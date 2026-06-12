@@ -403,7 +403,7 @@ export function DashboardPage() {
                   placeholder="Search subscriptions…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-line bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                   aria-label="Search subscriptions"
                 />
               </div>
@@ -423,8 +423,8 @@ export function DashboardPage() {
                     onClick={() => setCategoryFilter(cat)}
                     className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       categoryFilter === cat
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+                        ? 'bg-primary text-primary-fg shadow-sm'
+                        : 'bg-surface border border-line text-fg-muted hover:border-primary/40 hover:text-primary'
                     }`}
                     aria-pressed={categoryFilter === cat}
                   >
@@ -436,7 +436,7 @@ export function DashboardPage() {
 
             {/* Tab toggle + bulk controls */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Subscription filter">
+              <div className="flex gap-1 bg-surface-muted rounded-lg p-1" role="tablist" aria-label="Subscription filter">
                 {(['all', 'overdue', 'upcoming', 'paused'] as Tab[]).map(tab => (
                   <button
                     key={tab}
@@ -445,8 +445,8 @@ export function DashboardPage() {
                     onClick={() => { setActiveTab(tab); exitSelectMode(); }}
                     className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize flex items-center gap-1.5 ${
                       activeTab === tab
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-surface text-fg shadow-sm'
+                        : 'text-fg-subtle hover:text-fg'
                     }`}
                   >
                     {tab === 'all' && `All (${active.length})`}
@@ -454,7 +454,7 @@ export function DashboardPage() {
                       <>
                         Overdue
                         {overdue.length > 0 && (
-                          <span className="rounded-full bg-red-100 text-red-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
+                          <span className="rounded-full bg-error-50 text-error-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
                             {overdue.length}
                           </span>
                         )}
@@ -464,7 +464,7 @@ export function DashboardPage() {
                       <>
                         Upcoming
                         {upcoming.length > 0 && (
-                          <span className="rounded-full bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
+                          <span className="rounded-full bg-primary-50 text-primary-700 px-1.5 py-0.5 text-xs font-semibold leading-none">
                             {upcoming.length}
                           </span>
                         )}
