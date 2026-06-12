@@ -25,6 +25,7 @@ import { OnboardingModal } from '../components/OnboardingModal';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
 import { DueSoonCard } from '../components/DueSoonCard';
+import { ExchangeRatesCard } from '../components/ExchangeRatesCard';
 import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types';
 import { formatNative, toMonthlyNgn } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -134,10 +135,20 @@ export function DashboardPage() {
   // Native per-currency spend totals (no conversion). Primary = highest monthly.
   const byCurrency = summary?.byCurrency ?? [];
   const primary = byCurrency[0] ?? null;
+  // Horizontal per-currency (e.g. "$41.00 USD   ₦363,333 NGN"), no conversion.
   const spendLines = (kind: 'monthlySpend' | 'yearlySpend') =>
     byCurrency.length === 0
       ? <span>—</span>
-      : <>{byCurrency.map(c => <div key={c.currency}>{formatNative(c[kind], c.currency)}</div>)}</>;
+      : (
+        <div className="flex flex-wrap items-end gap-x-5 gap-y-1">
+          {byCurrency.map(c => (
+            <div key={c.currency} className="flex flex-col">
+              <span className="leading-none">{formatNative(c[kind], c.currency)}</span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-fg-subtle">{c.currency}</span>
+            </div>
+          ))}
+        </div>
+      );
 
   // ── Budget bars — one per currency that has a budget set (native, no conversion) ──
   // One row per spent currency (e.g. USD + NGN). Currencies without a configured
@@ -323,25 +334,52 @@ export function DashboardPage() {
         {/* Key metrics */}
         <section aria-labelledby="kpi-heading">
           <h2 id="kpi-heading" className="sr-only">Key metrics</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {sumLoading ? (
               <>
-                <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
+                <StatCardSkeleton /><StatCardSkeleton />
                 <StatCardSkeleton /><StatCardSkeleton />
               </>
             ) : (
               <>
-                {[
-                  { label: 'Monthly spend', value: spendLines('monthlySpend'), trend: trendPct },
-                  { label: 'Yearly spend',  value: spendLines('yearlySpend'),  trend: null as number | null },
-                  { label: 'Active subs',   value: String(summary?.activeCount ?? 0), trend: null as number | null },
-                  { label: 'Due this week', value: String(summary?.due7Days ?? 0), trend: null as number | null },
-                ].map(card => (
-                  <StatCard key={card.label} label={card.label} value={card.value} trend={card.trend} />
-                ))}
+                <StatCard
+                  label="Monthly spend"
+                  value={spendLines('monthlySpend')}
+                  trend={trendPct}
+                  icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M6 5h12a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V8a3 3 0 013-3zm1 11h3" /></svg>}
+                />
+                <StatCard
+                  label="Yearly spend"
+                  value={spendLines('yearlySpend')}
+                  icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                />
 
-                {/* 5th cell: monthly budget, one row per currency */}
+                {/* Active subs + Due this week, combined */}
                 <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-eyebrow uppercase text-fg-subtle">Active subs</p>
+                      <p className="mt-1.5 text-2xl font-bold tabular-nums text-fg">{summary?.activeCount ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-eyebrow uppercase text-fg-subtle">Due this week</p>
+                      <p className="mt-1.5 text-2xl font-bold tabular-nums text-fg">{summary?.due7Days ?? 0}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monthly budget — ring + per-currency rows */}
+                <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+                    </span>
+                  </div>
                   <p className="text-eyebrow uppercase text-fg-subtle">Monthly budget</p>
                   {budgetBars.length === 0 ? (
                     <Link to="/settings" className="mt-2 inline-block text-sm font-medium text-primary hover:text-primary-700">
@@ -349,7 +387,7 @@ export function DashboardPage() {
                     </Link>
                   ) : (
                     <div className="mt-3 flex items-center gap-3">
-                      {ringBudget && <ProgressRing pct={ringBudget.pct} />}
+                      {ringBudget && <ProgressRing pct={ringBudget.pct} size={42} />}
                       <div className="min-w-0 flex-1 space-y-1">
                         {budgetBars.map(b => {
                           const over = b.limit > 0 && b.spend > b.limit;
@@ -374,16 +412,6 @@ export function DashboardPage() {
             )}
           </div>
         </section>
-
-        {/* FX rate disclosure */}
-        {fxRates && (
-          <p className="text-right text-xs text-fg-subtle">
-            {fxStale
-              ? '⚠ Exchange rates may be outdated — rates are refreshed daily.'
-              : `Rates as of ${new Date(fxRates.fetchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · Interbank mid-market rate`
-            }
-          </p>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -604,6 +632,14 @@ export function DashboardPage() {
             )}
 
             <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
+
+            {fxRates && (
+              <ExchangeRatesCard
+                fxRates={fxRates}
+                currencies={byCurrency.map(c => c.currency)}
+                stale={fxStale}
+              />
+            )}
 
             <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
 
