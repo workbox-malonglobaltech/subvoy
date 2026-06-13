@@ -188,6 +188,21 @@ router.put('/timezone', authenticate, validate(timezoneSchema), async (req: Requ
   }
 });
 
+const countrySchema = z.object({
+  country: z.string().length(2),
+});
+
+// Set the user's country (web client posts this at registration; drives currency).
+router.put('/country', authenticate, validate(countrySchema), async (req: Request, res: Response) => {
+  try {
+    await userModel.updateCountry(req.user!.id, req.body.country);
+    res.status(200).json({ success: true, data: null, error: null });
+  } catch (err) {
+    console.error('Update country error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to update country' });
+  }
+});
+
 const deleteAccountSchema = z.object({
   password: z.string().min(1).optional(),
 });

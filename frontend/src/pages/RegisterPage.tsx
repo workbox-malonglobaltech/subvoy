@@ -1,9 +1,11 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Button } from '../components/ui/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { LogoMark } from '../components/LogoMark';
+import { api } from '../lib/api';
+import { COUNTRIES } from '../utils/countries';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -14,13 +16,27 @@ export function RegisterPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [accountType, setAccountType] = useState<'personal' | 'business'>('personal');
+  const [businessName, setBusinessName] = useState('');
+  const [country, setCountry] = useState('');
+
+  // Pre-fill country from the visitor's IP (best-effort; fully editable).
+  useEffect(() => {
+    api.get<{ country: string | null }>('/geo/country')
+      .then(d => { if (d.country) setCountry(d.country); })
+      .catch(() => { /* leave blank — user picks */ });
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await register(email, password, name || undefined);
+      await register(email, password, name || undefined, {
+        country: country || undefined,
+        accountType,
+        businessName: accountType === 'business' ? businessName : undefined,
+      });
       // Flag this as a fresh registration so the onboarding modal shows
       localStorage.setItem('subvoy_new_user', '1');
       navigate('/');
@@ -59,6 +75,30 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
+              <span className="block text-sm font-medium text-gray-700 mb-1.5">Account type</span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['personal', 'business'] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setAccountType(t)}
+                    aria-pressed={accountType === t}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors ${
+                      accountType === t ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-fg-subtle">
+                {accountType === 'business'
+                  ? 'A business workspace (subscriptions + compliance + team) — plus your personal space.'
+                  : 'Track your personal subscriptions and bills.'}
+              </p>
+            </div>
+
+            <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name <span className="text-fg-subtle font-normal">(optional)</span>
               </label>
@@ -72,6 +112,20 @@ export function RegisterPage() {
                 placeholder="Jane Smith"
               />
             </div>
+
+            {accountType === 'business' && (
+              <div>
+                <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">Business name</label>
+                <input
+                  id="businessName"
+                  type="text"
+                  value={businessName}
+                  onChange={e => setBusinessName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Acme Ltd"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -109,6 +163,20 @@ export function RegisterPage() {
                   {showPw ? 'Hide' : 'Show'}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <select
+                id="country"
+                value={country}
+                onChange={e => setCountry(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              >
+                <option value="">Select your country…</option>
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-fg-subtle">Sets your local currency — auto-detected, change if needed.</p>
             </div>
 
             <Button type="submit" loading={loading} size="lg" className="w-full">
