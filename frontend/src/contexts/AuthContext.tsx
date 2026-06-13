@@ -3,11 +3,17 @@ import { api } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { User } from '../../../src/shared/types';
 
+export interface RegisterOptions {
+  country?: string;
+  accountType?: 'personal' | 'business';
+  businessName?: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string, password: string, name?: string, opts?: RegisterOptions) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (name: string | null) => Promise<void>;
@@ -61,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await fetchDomainUser());
   }
 
-  async function register(email: string, password: string, name?: string) {
+  async function register(email: string, password: string, name?: string, opts?: RegisterOptions) {
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { data: name ? { name } : undefined },
@@ -70,6 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // If email confirmation is enabled, no session is returned until they confirm.
     if (!data.session) {
       throw new Error('Check your email to confirm your account, then log in.');
+    }
+    // Post-signup setup (best-effort): store country; a Business signup also gets a
+    // Business workspace — the Personal one auto-provisions, so they have both.
+    if (opts?.country) {
+      try { await api.put('/auth/country', { country: opts.country }); } catch { /* non-blocking */ }
+    }
+    if (opts?.accountType === 'business') {
+      try {
+        await api.post('/workspaces', {
+          name: opts.businessName?.trim() || `${name ?? 'My'} Business`,
+          country: opts.country,
+        });
+      } catch { /* non-blocking — they can create it later */ }
     }
     setUser(await fetchDomainUser());
   }
