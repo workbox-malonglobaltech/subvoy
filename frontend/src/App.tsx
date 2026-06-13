@@ -5,6 +5,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { WALLET_ENABLED } from './lib/features';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SmartRoot } from './components/SmartRoot';
 import { LoginPage } from './pages/LoginPage';
@@ -53,6 +54,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/invite/:token" element={<AcceptInvitePage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
 
               {/* Protected app pages */}
               <Route element={<ProtectedRoute />}>
