@@ -35,6 +35,7 @@ import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
 import { AdminAnnouncementsPage } from './pages/admin/AdminAnnouncementsPage';
 import { AdminAuditPage } from './pages/admin/AdminAuditPage';
 import { AdminLimitsPage } from './pages/admin/AdminLimitsPage';
+import { AdminCountrySettingsPage } from './pages/admin/AdminCountrySettingsPage';
 import './App.css';
 
 function App() {
@@ -81,6 +82,7 @@ function App() {
                 <Route path="notifications" element={<AdminNotificationsPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="limits" element={<AdminLimitsPage />} />
+                <Route path="countries" element={<AdminCountrySettingsPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
               </Route>
 
