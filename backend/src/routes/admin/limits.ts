@@ -49,6 +49,17 @@ router.put('/', validate(setPlanSchema), async (req: Request, res: Response) => 
   }
 });
 
+// GET /admin/limits/overrides — all per-account overrides.
+router.get('/overrides', async (_req: Request, res: Response) => {
+  try {
+    const overrides = await entitlements.listWorkspaceOverrides();
+    res.status(200).json({ success: true, data: overrides, error: null });
+  } catch (err) {
+    console.error('List overrides error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to fetch overrides' });
+  }
+});
+
 const overrideSchema = z.object({
   workspaceId: z.string().uuid(),
   limitKey: z.string().min(1).max(60),
