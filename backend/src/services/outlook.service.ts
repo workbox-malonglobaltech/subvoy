@@ -73,6 +73,7 @@ export async function exchangeOutlookCode(code: string): Promise<OAuthTokens> {
 
 async function getGraphClient(
   userId: string,
+  connectionId: string,
   accessToken: string,
   refreshToken: string | null,
   tokenExpiry: Date | null
@@ -88,7 +89,7 @@ async function getGraphClient(
       });
       if (result?.accessToken) {
         token = result.accessToken;
-        await updateAccessToken(userId, 'outlook', token, result.expiresOn ?? undefined);
+        await updateAccessToken(userId, connectionId, token, result.expiresOn ?? undefined);
       }
     } catch {
       // Use existing token and hope for the best
@@ -102,11 +103,12 @@ async function getGraphClient(
 
 export async function fetchOutlookReceipts(
   userId: string,
+  connectionId: string,
   accessToken: string,
   refreshToken: string | null,
   tokenExpiry: Date | null
 ): Promise<RawEmail[]> {
-  const client = await getGraphClient(userId, accessToken, refreshToken, tokenExpiry);
+  const client = await getGraphClient(userId, connectionId, accessToken, refreshToken, tokenExpiry);
 
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);

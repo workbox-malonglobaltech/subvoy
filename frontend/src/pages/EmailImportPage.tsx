@@ -82,14 +82,13 @@ export function EmailImportPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const gmailConnected  = connections.some(c => c.provider === 'gmail');
-  const gmailConnection = connections.find(c => c.provider === 'gmail');
+  const gmailConnected = connections.some(c => c.provider === 'gmail');
 
-  async function handleDisconnect(provider: 'gmail' | 'outlook') {
+  async function handleDisconnect(id: string) {
     try {
-      await api.delete(`/email-import/disconnect/${provider}`);
-      setConnections(prev => prev.filter(c => c.provider !== provider));
-      toast.success('Disconnected');
+      await api.delete(`/email-import/disconnect/${id}`);
+      setConnections(prev => prev.filter(c => c.id !== id));
+      toast.success('Account disconnected');
     } catch {
       toast.error('Failed to disconnect');
     }
@@ -173,66 +172,73 @@ export function EmailImportPage() {
             </p>
           </div>
 
-          {/* Provider cards */}
+          {/* Connected accounts — multiple inboxes per provider are supported */}
+          {connections.length > 0 && (
+            <div className="bg-surface rounded-2xl border border-line p-5 shadow-card">
+              <h3 className="text-sm font-semibold text-fg-muted mb-3">Connected accounts</h3>
+              <ul className="divide-y divide-line">
+                {connections.map(c => (
+                  <li key={c.id} className="flex items-center justify-between gap-2 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="shrink-0 rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] font-semibold text-fg-muted">
+                        {c.provider === 'gmail' ? 'Gmail' : 'Outlook'}
+                      </span>
+                      <span className="truncate text-sm text-fg">{c.email ?? 'Connected account'}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDisconnect(c.id)}
+                      className="shrink-0 text-xs font-medium text-error-600 transition-colors hover:text-error-700"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Connect / add accounts */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            {/* Gmail — OAuth */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+            {/* Gmail — OAuth (adds a new account; supports several) */}
+            <div className="bg-surface rounded-2xl border border-line p-5 shadow-card">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-surface-muted border border-line flex items-center justify-center">
                   <svg viewBox="0 0 24 24" className="w-6 h-6">
                     <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.910 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"
                       fill="#EA4335"/>
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">Gmail</p>
-                  {gmailConnected && gmailConnection?.email && (
-                    <p className="text-xs text-fg-subtle truncate max-w-[140px]">{gmailConnection.email}</p>
-                  )}
+                  <p className="font-semibold text-fg text-sm">Gmail</p>
+                  <p className="text-xs text-fg-subtle">{gmailConnected ? 'Add another inbox' : 'Connect your inbox'}</p>
                 </div>
-                {gmailConnected && (
-                  <span className="ml-auto text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                    Connected
-                  </span>
-                )}
               </div>
-
-              {gmailConnected ? (
-                <button
-                  onClick={() => handleDisconnect('gmail')}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <a
-                  href="/email-import/connect/google"
-                  className="block w-full text-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-                >
-                  Connect Gmail
-                </a>
-              )}
+              <a
+                href="/email-import/connect/google"
+                className="block w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary-700 transition-colors"
+              >
+                {gmailConnected ? 'Add another Gmail' : 'Connect Gmail'}
+              </a>
             </div>
 
             {/* Other Email — IMAP */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+            <div className="bg-surface rounded-2xl border border-line p-5 shadow-card">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 rounded-xl bg-surface-muted border border-line flex items-center justify-center">
+                  <svg className="w-5 h-5 text-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">Other Email</p>
+                  <p className="font-semibold text-fg text-sm">Other Email</p>
                   <p className="text-xs text-fg-subtle">Yahoo, Outlook, custom domain…</p>
                 </div>
               </div>
-
               <button
                 onClick={() => setShowImapModal(true)}
-                className="block w-full text-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+                className="block w-full text-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary-700 transition-colors"
               >
                 Connect Email
               </button>

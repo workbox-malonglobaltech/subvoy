@@ -71,6 +71,7 @@ export interface RawEmail {
 
 async function getRefreshedClient(
   userId: string,
+  connectionId: string,
   accessToken: string,
   refreshToken: string | null,
   tokenExpiry: Date | null
@@ -88,7 +89,7 @@ async function getRefreshedClient(
     oauth2Client.setCredentials(credentials);
     if (credentials.access_token) {
       await updateAccessToken(
-        userId, 'gmail',
+        userId, connectionId,
         credentials.access_token,
         credentials.expiry_date ? new Date(credentials.expiry_date) : undefined
       );
@@ -100,11 +101,12 @@ async function getRefreshedClient(
 
 export async function fetchGmailReceipts(
   userId: string,
+  connectionId: string,
   accessToken: string,
   refreshToken: string | null,
   tokenExpiry: Date | null
 ): Promise<RawEmail[]> {
-  const auth = await getRefreshedClient(userId, accessToken, refreshToken, tokenExpiry);
+  const auth = await getRefreshedClient(userId, connectionId, accessToken, refreshToken, tokenExpiry);
   const gmail = google.gmail({ version: 'v1', auth });
 
   // Build query: receipts/invoices from known subscription senders in past 6 months
