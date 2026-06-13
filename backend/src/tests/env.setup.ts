@@ -6,3 +6,6 @@ process.env.NODE_ENV = 'test';
 // Exercise the wallet/autopay feature in tests regardless of the deploy flag —
 // the gating itself is a thin 404/hidden layer; the feature logic stays covered.
 process.env.FEATURE_WALLET = 'true';
+
+// Deterministic 32-byte key (64 hex) so token encryption works in unit tests.
+process.env.ENCRYPTION_KEY = process.env.ENCRYPTION_KEY ?? '0'.repeat(64);
