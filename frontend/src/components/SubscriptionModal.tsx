@@ -19,11 +19,13 @@ interface Props {
   onClose: () => void;
   onSave: (data: CreateSubscriptionInput) => Promise<void>;
   initial?: Subscription | null;
-  /** Default currency for a NEW subscription (the workspace's primary currency). */
+  /** Default currency for a NEW subscription (the user's local currency). */
   defaultCurrency?: string;
+  /** Currencies to offer (local + USD; US → [USD]). Falls back to all supported. */
+  currencies?: string[];
 }
 
-export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurrency }: Props) {
+export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurrency, currencies }: Props) {
   const { rates: fxRates } = useFxRates();
   const [name, setName] = useState('');
   const [service, setService] = useState('');
@@ -201,8 +203,8 @@ export function SubscriptionModal({ open, onClose, onSave, initial, defaultCurre
                   aria-label="Currency"
                   className="rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {SUPPORTED_CURRENCIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.value}</option>
+                  {(currencies && currencies.length ? currencies : SUPPORTED_CURRENCIES.map(c => c.value)).map(code => (
+                    <option key={code} value={code}>{code}</option>
                   ))}
                 </select>
                 <input
