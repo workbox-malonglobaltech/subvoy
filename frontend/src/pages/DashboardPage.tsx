@@ -414,7 +414,9 @@ export function DashboardPage() {
                               <span className="text-fg-subtle">{b.currency}</span>
                               {b.limit > 0 ? (
                                 <span className={`font-medium tabular-nums ${over ? 'text-error-600' : 'text-fg'}`}>
-                                  {over ? `over ${formatNative(b.spend - b.limit, b.currency)}` : `${Math.round(b.pct)}%`}
+                                  {over
+                                    ? `over ${formatNative(b.spend - b.limit, b.currency)}`
+                                    : `${formatNative(b.spend, b.currency)} / ${formatNative(b.limit, b.currency)}`}
                                 </span>
                               ) : (
                                 <Link to="/settings" className="font-medium text-primary hover:text-primary-700">Set →</Link>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatNative } from '../utils/currency';
 
@@ -16,14 +17,36 @@ interface Props {
   activeCategory?: string;
 }
 
-/** Dashboard sidebar panel: spend-by-category donut + legend, for one currency. */
+/** Dashboard sidebar panel: spend-by-category donut + legend, with a currency toggle. */
 export function SpendByCategoryCard({ byCategory, currency, onSelectCategory, activeCategory }: Props) {
-  // Only this currency's categories — summing across currencies would let a
+  const available = Array.from(new Set(byCategory.map(c => c.currency)));
+  const [picked, setPicked] = useState(currency);
+  // Show one currency at a time — summing across currencies would let a
   // high-magnitude currency (e.g. NGN) swamp the chart.
-  const rows = byCategory.filter(c => c.currency === currency);
+  const cur = available.includes(picked) ? picked : (available[0] ?? currency);
+  const rows = byCategory.filter(c => c.currency === cur);
   return (
     <div className="bg-surface rounded-2xl border border-line p-5 shadow-card">
-      <h2 className="text-sm font-semibold text-fg-muted mb-4">Spend by category · {currency}</h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-fg-muted">Spend by category</h2>
+        {available.length > 1 && (
+          <div className="flex rounded-lg border border-line p-0.5">
+            {available.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setPicked(c)}
+                aria-pressed={cur === c}
+                className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                  cur === c ? 'bg-surface-muted text-fg' : 'text-fg-subtle hover:text-fg'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {rows.length === 0 ? (
         <p className="text-sm text-fg-subtle text-center py-6">No data yet</p>
       ) : (
@@ -37,7 +60,7 @@ export function SpendByCategoryCard({ byCategory, currency, onSelectCategory, ac
               >
                 {rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v) => formatNative(Number(v), currency)} />
+              <Tooltip formatter={(v) => formatNative(Number(v), cur)} />
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-1 mt-3">
@@ -57,7 +80,7 @@ export function SpendByCategoryCard({ byCategory, currency, onSelectCategory, ac
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} aria-hidden="true" />
                     <span className={`truncate ${active ? 'font-medium text-primary-700' : 'text-fg-muted'}`}>{c.category}</span>
                   </span>
-                  <span className="font-medium tabular-nums text-fg shrink-0">{formatNative(c.total, currency)}</span>
+                  <span className="font-medium tabular-nums text-fg shrink-0">{formatNative(c.total, cur)}</span>
                 </button>
               );
             })}
