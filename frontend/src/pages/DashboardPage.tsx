@@ -34,6 +34,7 @@ import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types
 import { formatNative, toMonthlyNgn } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
+import { useLocale } from '../hooks/useLocale';
 import { api, ApiError } from '../lib/api';
 import { daysUntil } from '../lib/date';
 
@@ -57,6 +58,7 @@ export function DashboardPage() {
   const { wallet, loading: walletLoading } = useWallet();
   const { data: analyticsData } = useAnalytics();
   const notifPrefs = useNotificationPrefs();
+  const locale = useLocale();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Subscription | null>(null);
@@ -751,7 +753,8 @@ export function DashboardPage() {
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSave={handleSave}
         initial={editing}
-        defaultCurrency={primary?.currency}
+        defaultCurrency={locale?.currency ?? primary?.currency}
+        currencies={locale?.currencies}
       />
 
       {payConfirm && (
