@@ -11,6 +11,7 @@ import { useFxRates } from '../hooks/useFxRates';
 import { useWallet } from '../hooks/useWallet';
 import { useOnboarding, isWelcomeSeen, markWelcomeSeen } from '../hooks/useOnboarding';
 import { SubscriptionCard } from '../components/SubscriptionCard';
+import { SubscriptionList } from '../components/SubscriptionList';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
 import { StatCard } from '../components/ui/StatCard';
 import { ProgressRing } from '../components/ui/ProgressRing';
@@ -62,6 +63,8 @@ export function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortBy, setSortBy] = useState<'default' | 'due' | 'amount' | 'name'>('default');
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   // ── Onboarding ──────────────────────────────────────────────────────────────
   const [onboardingModalOpen, setOnboardingModalOpen] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(
@@ -133,6 +136,9 @@ export function DashboardPage() {
     return ((thisMo - lastMo) / lastMo) * 100;
   }, [analyticsData]);
 
+  // 12-month spend series for the KPI sparklines.
+  const monthlyTotals = useMemo(() => (analyticsData?.months ?? []).map(m => m.total), [analyticsData]);
+
   // Native per-currency spend totals (no conversion). Primary = highest monthly.
   const byCurrency = summary?.byCurrency ?? [];
   const primary = byCurrency[0] ?? null;
@@ -174,15 +180,21 @@ export function DashboardPage() {
       return matchesSearch && matchesCategory;
     });
 
-    // Group same-name subscriptions together (alphabetical) on the All/Paused
-    // lists for easy access; keep due-date order on Upcoming/Overdue.
-    if (activeTab === 'all' || activeTab === 'paused') {
+    // Explicit sort wins; otherwise group same-name subs together on All/Paused
+    // and keep due-date order on Upcoming/Overdue.
+    if (sortBy === 'due') {
+      result.sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
+    } else if (sortBy === 'amount') {
+      result.sort((a, b) => b.amount - a.amount);
+    } else if (sortBy === 'name') {
+      result.sort((a, b) => a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' }));
+    } else if (activeTab === 'all' || activeTab === 'paused') {
       result.sort((a, b) =>
         a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
         || new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
     }
     return result;
-  }, [subscriptions, activeTab, upcoming, overdue, paused, active, search, categoryFilter]);
+  }, [subscriptions, activeTab, upcoming, overdue, paused, active, search, categoryFilter, sortBy]);
 
   const openAdd = useCallback(() => { setEditing(null); setModalOpen(true); }, []);
   const openEdit = useCallback((sub: Subscription) => { setEditing(sub); setModalOpen(true); }, []);
@@ -349,18 +361,21 @@ export function DashboardPage() {
                   label="Monthly spend"
                   value={spendLines('monthlySpend')}
                   trend={trendPct}
+                  sparkline={monthlyTotals}
                   icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M6 5h12a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V8a3 3 0 013-3zm1 11h3" /></svg>}
                 />
                 <StatCard
                   label="Yearly spend"
                   value={spendLines('yearlySpend')}
+                  sparkline={monthlyTotals}
+                  iconClassName="bg-info-50 text-info-600"
                   icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
                 />
 
                 {/* Active subs + Due this week, combined */}
                 <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning-50 text-warning-600">
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                     </span>
                   </div>
@@ -379,7 +394,7 @@ export function DashboardPage() {
                 {/* Monthly budget — ring + per-currency rows */}
                 <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-success-50 text-success-600">
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
                     </span>
                   </div>
@@ -506,8 +521,30 @@ export function DashboardPage() {
                 ))}
               </div>
 
-              {/* Bulk controls */}
-              {activeTab !== 'paused' && active.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                  aria-label="Sort subscriptions"
+                  className="rounded-lg border border-line bg-surface px-2 py-1.5 text-xs font-medium text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="default">Sort: Default</option>
+                  <option value="due">Next due</option>
+                  <option value="amount">Amount (high→low)</option>
+                  <option value="name">Name (A→Z)</option>
+                </select>
+                <div className="flex rounded-lg border border-line p-0.5">
+                  <button onClick={() => setViewMode('cards')} aria-pressed={viewMode === 'cards'} aria-label="Card view" title="Cards"
+                    className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-surface-muted text-fg' : 'text-fg-subtle hover:text-fg'}`}>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                  </button>
+                  <button onClick={() => setViewMode('list')} aria-pressed={viewMode === 'list'} aria-label="List view" title="List"
+                    className={`rounded-md p-1.5 transition-colors ${viewMode === 'list' ? 'bg-surface-muted text-fg' : 'text-fg-subtle hover:text-fg'}`}>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                  </button>
+                </div>
+                {/* Bulk controls */}
+                {activeTab !== 'paused' && active.length > 0 && (
                 selectMode ? (
                   <div className="flex items-center gap-2">
                     <button
@@ -539,6 +576,7 @@ export function DashboardPage() {
                   </button>
                 )
               )}
+              </div>
             </div>
 
             {subLoading ? (
@@ -566,6 +604,15 @@ export function DashboardPage() {
                   Clear filters
                 </button>
               </div>
+            ) : viewMode === 'list' ? (
+              <SubscriptionList
+                subs={filtered}
+                onEdit={openEdit}
+                onDelete={setDeleteConfirm}
+                onArchive={handleArchive}
+                onRestore={handleRestore}
+                fxRates={fxRates}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filtered.map(sub => (
@@ -634,7 +681,12 @@ export function DashboardPage() {
               </div>
             )}
 
-            <SpendByCategoryCard byCategory={summary?.byCategory ?? []} currency={primary?.currency ?? 'USD'} />
+            <SpendByCategoryCard
+              byCategory={summary?.byCategory ?? []}
+              currency={primary?.currency ?? 'USD'}
+              onSelectCategory={cat => setCategoryFilter(prev => prev === cat ? 'All' : cat)}
+              activeCategory={categoryFilter}
+            />
 
             {fxRates && (
               <ExchangeRatesCard
