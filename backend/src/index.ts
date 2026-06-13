@@ -37,6 +37,7 @@ import { startFxJob } from './jobs/fx.job';
 import { startWalletJob } from './jobs/wallet.job';
 import { startAutopayJob } from './jobs/autopay.job';
 import { WALLET_ENABLED } from './config/features';
+import geoRouter from './routes/geo';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -119,6 +120,7 @@ app.use('/auth', authLimiter, forgotPasswordRouter);
 app.use('/categories', categoriesRouter);
 app.use('/auth', oauthRouter);
 app.use('/fx', fxRouter);
+app.use('/geo', geoRouter);
 if (WALLET_ENABLED) app.use('/wallet', walletRouter);
 app.use('/reports', reportsRouter);
 app.use('/admin', adminRouter);

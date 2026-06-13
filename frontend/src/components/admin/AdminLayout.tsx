@@ -69,6 +69,15 @@ function AuditIcon() {
   );
 }
 
+function GlobeIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18" />
+    </svg>
+  );
+}
+
 function LimitsIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -127,6 +136,7 @@ function SidebarContent({
     { to: '/admin/notifications', label: 'Notifications', icon: <BellIcon /> },
     { to: '/admin/announcements', label: 'Announcements', icon: <MegaphoneIcon /> },
     { to: '/admin/limits', label: 'Plan Limits', icon: <LimitsIcon /> },
+    { to: '/admin/countries', label: 'Countries', icon: <GlobeIcon /> },
     { to: '/admin/audit', label: 'Audit Log', icon: <AuditIcon /> },
   ];
 

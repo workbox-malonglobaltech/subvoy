@@ -11,6 +11,7 @@ import notificationsRouter from './notifications';
 import announcementsRouter from './announcements';
 import auditRouter        from './audit';
 import limitsRouter       from './limits';
+import countrySettingsRouter from './country-settings';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/notifications', notificationsRouter);
 router.use('/announcements', announcementsRouter);
 router.use('/audit',         auditRouter);
 router.use('/limits',        limitsRouter);
+router.use('/country-settings', countrySettingsRouter);
 
 export default router;
