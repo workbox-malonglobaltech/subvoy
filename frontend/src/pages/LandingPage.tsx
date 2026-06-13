@@ -483,7 +483,7 @@ export function LandingPage() {
             <div>
               <h4 className="text-white text-sm font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm">
-                <li><span className="opacity-50 cursor-default">Privacy Policy</span></li>
+                <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><span className="opacity-50 cursor-default">Terms of Service</span></li>
               </ul>
             </div>
