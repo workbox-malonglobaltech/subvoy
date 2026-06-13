@@ -251,4 +251,26 @@ router.post('/:id/pay', async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /subscriptions/:id/mark-paid ─────────────────────────────────────────
+/**
+ * Record that the user paid this subscription elsewhere (their own card/bank).
+ * Non-custodial: advances next_billing_date by one cycle, moves no money — so it
+ * is NOT gated by FEATURE_WALLET. This is what clears an "overdue" tracker entry.
+ */
+router.post('/:id/mark-paid', async (req: Request, res: Response) => {
+  const workspaceId = req.workspace!.id;
+  const subId = req.params.id;
+  try {
+    const sub = await subModel.advanceNextBillingDate(subId, workspaceId);
+    if (!sub) {
+      res.status(404).json({ success: false, data: null, error: 'Subscription not found' });
+      return;
+    }
+    res.status(200).json({ success: true, data: sub, error: null });
+  } catch (err) {
+    console.error(`POST /subscriptions/${subId}/mark-paid error:`, err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to mark as paid' });
+  }
+});
+
 export default router;

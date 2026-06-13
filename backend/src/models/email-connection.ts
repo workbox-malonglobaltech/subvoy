@@ -87,7 +87,7 @@ export async function upsertConnection(
   const { rows } = await pool.query<EmailConnectionRow>(
     `INSERT INTO email_connections (user_id, provider, access_token, refresh_token, token_expiry, email)
      VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (user_id, provider) DO UPDATE SET
+     ON CONFLICT (user_id, provider, email) DO UPDATE SET
        access_token  = EXCLUDED.access_token,
        refresh_token = EXCLUDED.refresh_token,
        token_expiry  = EXCLUDED.token_expiry,
@@ -134,16 +134,47 @@ export async function deleteConnection(userId: string, provider: Provider): Prom
   return (rowCount ?? 0) > 0;
 }
 
+/** Fetch one connection (with decrypted tokens) by its id — for per-account scans. */
+export async function getConnectionById(userId: string, id: string): Promise<{
+  connection: EmailConnection;
+  accessToken: string;
+  refreshToken: string | null;
+  tokenExpiry: Date | null;
+} | null> {
+  const { rows } = await pool.query<EmailConnectionRow>(
+    'SELECT * FROM email_connections WHERE user_id = $1 AND id = $2',
+    [userId, id]
+  );
+  if (!rows[0]) return null;
+  return {
+    connection: toPublic(rows[0]),
+    accessToken: decryptToken(rows[0].access_token),
+    refreshToken: rows[0].refresh_token ? decryptToken(rows[0].refresh_token) : null,
+    tokenExpiry: rows[0].token_expiry,
+  };
+}
+
+/** Remove one specific connected account (per-account disconnect). */
+export async function deleteConnectionById(userId: string, id: string): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    'DELETE FROM email_connections WHERE user_id = $1 AND id = $2',
+    [userId, id]
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export async function updateAccessToken(
   userId: string,
-  provider: Provider,
+  connectionId: string,
   accessToken: string,
   tokenExpiry?: Date
 ): Promise<void> {
+  // Target one specific account by id (multiple same-provider accounts each hold
+  // their own token — a provider-wide update would clobber the others).
   await pool.query(
     `UPDATE email_connections
      SET access_token = $1, token_expiry = $2, updated_at = NOW()
-     WHERE user_id = $3 AND provider = $4`,
-    [encryptToken(accessToken), tokenExpiry ?? null, userId, provider]
+     WHERE user_id = $3 AND id = $4`,
+    [encryptToken(accessToken), tokenExpiry ?? null, userId, connectionId]
   );
 }

@@ -48,7 +48,7 @@ export function DashboardPage() {
   // Business workspaces track compliance too — show it alongside subscriptions.
   const isBusiness = activeWorkspace?.type === 'business';
   const { items: complianceItems } = useCompliance(isBusiness);
-  const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, refetch } = useSubscriptions(true);
+  const { subscriptions, loading: subLoading, add, update, remove, archive, restore, bulkDelete, markPaid, refetch } = useSubscriptions(true);
   // Bump on any mutation so the summary refetches — count alone misses edits.
   const [summaryKey, setSummaryKey] = useState(0);
   const refreshSummary = useCallback(() => setSummaryKey(k => k + 1), []);
@@ -304,6 +304,12 @@ export function DashboardPage() {
     const sub = subscriptions.find(s => s.id === id) ?? null;
     setPayConfirm(sub);
   }, [subscriptions]);
+
+  const handleMarkPaid = useCallback(async (id: string) => {
+    await markPaid(id);
+    refreshSummary();
+    toast.success('Marked as paid — moved to the next cycle');
+  }, [markPaid, refreshSummary, toast]);
 
   async function confirmPay() {
     if (!payConfirm) return;
@@ -620,6 +626,7 @@ export function DashboardPage() {
                 onDelete={setDeleteConfirm}
                 onArchive={handleArchive}
                 onRestore={handleRestore}
+                onMarkPaid={handleMarkPaid}
                 fxRates={fxRates}
               />
             ) : (
@@ -633,6 +640,7 @@ export function DashboardPage() {
                     onArchive={sub.isActive ? handleArchive : undefined}
                     onRestore={!sub.isActive ? handleRestore : undefined}
                     onPay={WALLET_ENABLED && sub.isActive ? handlePay : undefined}
+                    onMarkPaid={sub.isActive ? handleMarkPaid : undefined}
                     selectable={selectMode && sub.isActive}
                     selected={selected.has(sub.id)}
                     onSelect={toggleSelect}

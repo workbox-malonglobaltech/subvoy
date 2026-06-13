@@ -11,6 +11,7 @@ interface Props {
   onDelete: (id: string) => void;
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
+  onMarkPaid?: (id: string) => void;
   fxRates?: FxRates | null;
 }
 
@@ -24,7 +25,9 @@ function Icon({ d }: { d: string }) {
 }
 
 /** Compact table-style list of subscriptions (the dashboard "list" view). */
-export function SubscriptionList({ subs, onEdit, onDelete, onArchive, onRestore, fxRates }: Props) {
+const CHECK = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+
+export function SubscriptionList({ subs, onEdit, onDelete, onArchive, onRestore, onMarkPaid, fxRates }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
       <ul className="divide-y divide-line">
@@ -49,6 +52,10 @@ export function SubscriptionList({ subs, onEdit, onDelete, onArchive, onRestore,
                 {sub.isActive ? due : '—'}
               </span>
               <div className="flex shrink-0 items-center gap-0.5">
+                {sub.isActive && onMarkPaid && (
+                  <button onClick={() => onMarkPaid(sub.id)} aria-label={`Mark ${sub.name} paid`} title="Mark as paid — advances to next cycle (no charge)"
+                    className="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-emerald-50 hover:text-emerald-600"><Icon d={CHECK} /></button>
+                )}
                 <button onClick={() => onEdit(sub)} aria-label={`Edit ${sub.name}`} title="Edit"
                   className="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-surface-muted hover:text-fg"><Icon d={EDIT} /></button>
                 {sub.isActive && onArchive && (

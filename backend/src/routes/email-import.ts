@@ -121,18 +121,20 @@ router.post('/scan', authenticate, async (req: Request, res: Response) => {
     let allEmails: Awaited<ReturnType<typeof fetchGmailReceipts>> = [];
 
     for (const conn of connections) {
-      const full = await connModel.getConnection(userId, conn.provider);
+      // Fetch by connection id (not provider) so every account is scanned —
+      // a user can have several inboxes of the same provider.
+      const full = await connModel.getConnectionById(userId, conn.id);
       if (!full) continue;
 
       try {
         if (conn.provider === 'gmail') {
           const emails = await fetchGmailReceipts(
-            userId, full.accessToken, full.refreshToken, full.tokenExpiry
+            userId, conn.id, full.accessToken, full.refreshToken, full.tokenExpiry
           );
           allEmails = allEmails.concat(emails);
         } else if (conn.provider === 'outlook') {
           const emails = await fetchOutlookReceipts(
-            userId, full.accessToken, full.refreshToken, full.tokenExpiry
+            userId, conn.id, full.accessToken, full.refreshToken, full.tokenExpiry
           );
           allEmails = allEmails.concat(emails);
         }
@@ -248,15 +250,10 @@ router.post('/imap/scan', authenticate, async (req: Request, res: Response) => {
 
 // ─── Disconnect ───────────────────────────────────────────────────────────────
 
-router.delete('/disconnect/:provider', authenticate, async (req: Request, res: Response) => {
-  const provider = req.params.provider as connModel.Provider;
-  if (!['gmail', 'outlook'].includes(provider)) {
-    res.status(400).json({ success: false, data: null, error: 'Invalid provider' });
-    return;
-  }
-
+// Disconnect one specific account by its connection id (multi-account safe).
+router.delete('/disconnect/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    const deleted = await connModel.deleteConnection(req.user!.id, provider);
+    const deleted = await connModel.deleteConnectionById(req.user!.id, req.params.id);
     if (!deleted) {
       res.status(404).json({ success: false, data: null, error: 'Connection not found' });
       return;

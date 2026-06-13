@@ -12,6 +12,8 @@ interface Props {
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
   onPay?: (id: string) => Promise<void>;
+  /** Record an external payment → advance the cycle (non-custodial, no charge). */
+  onMarkPaid?: (id: string) => void;
   selectable?: boolean;
   selected?: boolean;
   onSelect?: (id: string, checked: boolean) => void;
@@ -69,7 +71,7 @@ function ServiceLogo({ name }: { name: string }) {
   );
 }
 
-function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onPay, selectable, selected, onSelect, fxRates, isRemoving, justSaved }: Props) {
+function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onPay, onMarkPaid, selectable, selected, onSelect, fxRates, isRemoving, justSaved }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [paying, setPaying] = useState(false);
 
@@ -150,6 +152,15 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
                 Auto
               </span>
             )}
+            {onMarkPaid && days <= 0 && (
+              <button
+                onClick={() => onMarkPaid(sub.id)}
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                title="Records a payment you made elsewhere — advances to the next cycle (no charge)"
+              >
+                Mark paid →
+              </button>
+            )}
           </div>
         )}
 
@@ -186,6 +197,12 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
                     aria-label={`Pay ${sub.name} from wallet`}
                   >
                     {paying ? '…' : 'Pay now'}
+                  </button>
+                )}
+                {onMarkPaid && days > 0 && (
+                  <button onClick={() => onMarkPaid(sub.id)} aria-label={`Mark ${sub.name} paid`} title="Mark as paid — advances to next cycle (no charge)"
+                    className="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-emerald-50 hover:text-emerald-600">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </button>
                 )}
                 <button onClick={() => onEdit(sub)} aria-label={`Edit ${sub.name}`} title="Edit"
