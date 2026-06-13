@@ -64,5 +64,12 @@ export function useSubscriptions(includeInactive = false) {
     setSubscriptions(prev => prev.filter(s => !ids.includes(s.id)));
   }, []);
 
-  return { subscriptions, loading, error, add, update, remove, hardRemove, archive, restore, bulkDelete, refetch: fetchAll };
+  // Non-custodial: record an external payment → advance the billing cycle.
+  const markPaid = useCallback(async (id: string) => {
+    const sub = await api.post<Subscription>(`/subscriptions/${id}/mark-paid`, {});
+    setSubscriptions(prev => prev.map(s => s.id === id ? sub : s));
+    return sub;
+  }, []);
+
+  return { subscriptions, loading, error, add, update, remove, hardRemove, archive, restore, bulkDelete, markPaid, refetch: fetchAll };
 }
