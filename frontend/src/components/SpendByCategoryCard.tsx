@@ -10,10 +10,14 @@ interface Props {
   byCategory: { category: string; currency: string; total: number }[];
   /** The currency to show the breakdown for (no cross-currency mixing). */
   currency: string;
+  /** Click a slice/legend row to filter the list to that category. */
+  onSelectCategory?: (category: string) => void;
+  /** Currently-filtered category, for highlight. */
+  activeCategory?: string;
 }
 
 /** Dashboard sidebar panel: spend-by-category donut + legend, for one currency. */
-export function SpendByCategoryCard({ byCategory, currency }: Props) {
+export function SpendByCategoryCard({ byCategory, currency, onSelectCategory, activeCategory }: Props) {
   // Only this currency's categories — summing across currencies would let a
   // high-magnitude currency (e.g. NGN) swamp the chart.
   const rows = byCategory.filter(c => c.currency === currency);
@@ -26,22 +30,37 @@ export function SpendByCategoryCard({ byCategory, currency }: Props) {
         <>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
-              <Pie data={rows} dataKey="total" nameKey="category" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3}>
+              <Pie
+                data={rows} dataKey="total" nameKey="category" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3}
+                onClick={(_, index: number) => { const cat = rows[index]?.category; if (cat) onSelectCategory?.(cat); }}
+                className={onSelectCategory ? 'cursor-pointer' : undefined}
+              >
                 {rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip formatter={(v) => formatNative(Number(v), currency)} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="space-y-2 mt-3">
-            {rows.map((c, i) => (
-              <div key={c.category} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} aria-hidden="true" />
-                  <span className="text-fg-muted truncate max-w-[120px]">{c.category}</span>
-                </div>
-                <span className="font-medium text-fg">{formatNative(c.total, currency)}</span>
-              </div>
-            ))}
+          <div className="space-y-1 mt-3">
+            {rows.map((c, i) => {
+              const active = activeCategory === c.category;
+              return (
+                <button
+                  key={c.category}
+                  type="button"
+                  onClick={() => onSelectCategory?.(c.category)}
+                  aria-pressed={active}
+                  className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-sm transition-colors ${
+                    active ? 'bg-primary-50' : 'hover:bg-surface-muted'
+                  } ${onSelectCategory ? '' : 'pointer-events-none'}`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} aria-hidden="true" />
+                    <span className={`truncate ${active ? 'font-medium text-primary-700' : 'text-fg-muted'}`}>{c.category}</span>
+                  </span>
+                  <span className="font-medium tabular-nums text-fg shrink-0">{formatNative(c.total, currency)}</span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
