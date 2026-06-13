@@ -131,6 +131,11 @@ export async function updateTimezone(userId: string, timezone: string): Promise<
   await pool.query('UPDATE users SET timezone = $1, updated_at = NOW() WHERE id = $2', [timezone, userId]);
 }
 
+/** Store the user's ISO 3166-1 alpha-2 country (drives local-currency display). */
+export async function updateCountry(userId: string, country: string): Promise<void> {
+  await pool.query('UPDATE users SET country = $1, updated_at = NOW() WHERE id = $2', [country.toUpperCase(), userId]);
+}
+
 export async function deleteUser(userId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
     'DELETE FROM users WHERE id = $1',
