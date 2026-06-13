@@ -31,7 +31,13 @@ function normalize(h: string): string {
 function findCol(headers: string[], keys: string[], used: Set<string>): string | null {
   const cand = headers.filter(h => !used.has(h)).map(h => ({ orig: h, n: normalize(h) }));
   for (const k of keys) { const e = cand.find(c => c.n === k); if (e) return e.orig; }
-  for (const k of keys) { const e = cand.find(c => c.n.includes(k)); if (e) return e.orig; }
+  // Substring pass — but ONLY for keys ≥3 chars. Short abbreviations like 'cr'/'dr'
+  // are far too greedy (e.g. 'cr' lives inside "des-cr-iption"), so they exact-match only.
+  for (const k of keys) {
+    if (k.length < 3) continue;
+    const e = cand.find(c => c.n.includes(k));
+    if (e) return e.orig;
+  }
   return null;
 }
 
@@ -113,12 +119,13 @@ export function parseCSV(buffer: Buffer): Transaction[] {
   const scores = scoreColumns(records, headers);
   const used = new Set<string>();
 
-  // 1) Fast path: match by header name (claim date first so "Transaction Date"
-  //    isn't taken as the description).
+  // 1) Fast path: match by header name. Claim date + amount first (so "Transaction
+  //    Date" isn't taken as the description), then DESCRIPTION before credit — the
+  //    description column is more specific and must not be stolen by a credit match.
   let dateCol = findCol(headers, DATE_KEYS, used);   if (dateCol) used.add(dateCol);
   let amtCol = findCol(headers, AMOUNT_KEYS, used);  if (amtCol) used.add(amtCol);
-  const creditCol = findCol(headers, CREDIT_KEYS, used); if (creditCol) used.add(creditCol);
   let descCol = findCol(headers, DESC_KEYS, used);   if (descCol) used.add(descCol);
+  const creditCol = findCol(headers, CREDIT_KEYS, used); if (creditCol) used.add(creditCol);
   const currCol = findCol(headers, CURR_KEYS, used);
 
   // 2) Content fallback for anything the header names didn't reveal.

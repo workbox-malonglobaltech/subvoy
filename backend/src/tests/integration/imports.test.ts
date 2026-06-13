@@ -188,7 +188,7 @@ describe('POST /imports/csv', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.error).toMatch(/failed to parse csv/i);
+    expect(res.body.error).toMatch(/couldn't identify|identify the .* column/i);
   });
 
   it('returns 200 with empty detected array when no recurring patterns found', async () => {
