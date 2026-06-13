@@ -434,3 +434,45 @@ describe('GET /subscriptions/summary', () => {
     expect(res.body.error).toMatch(/fetch summary/i);
   });
 });
+
+// ---------------------------------------------------------------------------
+// POST /subscriptions/:id/mark-paid  (non-custodial cycle advance)
+// ---------------------------------------------------------------------------
+
+describe('POST /subscriptions/:id/mark-paid', () => {
+  it('advances the billing date and returns the updated subscription', async () => {
+    const advanced = { ...subRow, next_billing_date: new Date('2026-06-01') };
+    mockQuery.mockResolvedValueOnce({ rows: [advanced] });
+
+    const res = await request(app).post(`/subscriptions/${SUB_ID}/mark-paid`).send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.error).toBeNull();
+    expect(res.body.data.nextBillingDate).toBe('2026-06-01');
+    // Advance is an UPDATE scoped by subscription id + workspace.
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('next_billing_date'),
+      [SUB_ID, WS_ID]
+    );
+  });
+
+  it('returns 404 when the subscription is not found', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app).post('/subscriptions/nonexistent/mark-paid').send({});
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toMatch(/not found/i);
+  });
+
+  it('returns 500 when the database throws', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('db error'));
+
+    const res = await request(app).post(`/subscriptions/${SUB_ID}/mark-paid`).send({});
+
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+  });
+});
