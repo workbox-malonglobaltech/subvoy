@@ -116,3 +116,16 @@ export async function clearWorkspaceOverride(workspaceId: string, limitKey: stri
   );
   return (rowCount ?? 0) > 0;
 }
+
+export interface WorkspaceOverride { workspaceId: string; workspaceName: string | null; limitKey: string; limitValue: number; }
+
+/** All per-account overrides (with workspace name) for the super-admin UI. */
+export async function listWorkspaceOverrides(): Promise<WorkspaceOverride[]> {
+  const { rows } = await pool.query<{ workspace_id: string; name: string | null; limit_key: string; limit_value: number }>(
+    `SELECT o.workspace_id, w.name, o.limit_key, o.limit_value
+       FROM workspace_limit_overrides o
+       LEFT JOIN workspaces w ON w.id = o.workspace_id
+      ORDER BY w.name NULLS LAST, o.limit_key`
+  );
+  return rows.map(r => ({ workspaceId: r.workspace_id, workspaceName: r.name, limitKey: r.limit_key, limitValue: r.limit_value }));
+}
