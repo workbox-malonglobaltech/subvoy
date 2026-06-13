@@ -173,6 +173,21 @@ router.put('/profile', authenticate, validate(updateProfileSchema), async (req: 
   }
 });
 
+const timezoneSchema = z.object({
+  timezone: z.string().min(1).max(64),
+});
+
+// Silently set the user's IANA timezone (the web client posts the browser tz on load).
+router.put('/timezone', authenticate, validate(timezoneSchema), async (req: Request, res: Response) => {
+  try {
+    await userModel.updateTimezone(req.user!.id, req.body.timezone);
+    res.status(200).json({ success: true, data: null, error: null });
+  } catch (err) {
+    console.error('Update timezone error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to update timezone' });
+  }
+});
+
 const deleteAccountSchema = z.object({
   password: z.string().min(1).optional(),
 });

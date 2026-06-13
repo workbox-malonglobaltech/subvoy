@@ -2,15 +2,15 @@ import cron from 'node-cron';
 import { runReminderScan } from '../services/reminder.service';
 
 export function startReminderJob(): void {
-  // Run daily at 8:00 AM in the configured timezone (defaults to UTC).
-  // Set REMINDER_TIMEZONE in .env to match your user base, e.g. 'America/New_York'.
-  const timezone = process.env.REMINDER_TIMEZONE ?? 'UTC';
-  cron.schedule('0 8 * * *', async () => {
+  // Runs hourly; the scan delivers each user's reminders at ~08:00 in THEIR own
+  // timezone (users.timezone), falling back to REMINDER_TIMEZONE / UTC. Per-user
+  // de-dupe (alreadyNotifiedToday) guarantees at most one reminder per item per day.
+  cron.schedule('0 * * * *', async () => {
     try {
       await runReminderScan();
     } catch (err) {
       console.error('[Reminder] Job failed:', err);
     }
-  }, { timezone });
-  console.log(`[Reminder] Daily reminder job scheduled (8:00 AM ${timezone})`);
+  }, { timezone: 'UTC' });
+  console.log('[Reminder] Hourly reminder job scheduled (delivers at 08:00 local per user)');
 }

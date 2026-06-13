@@ -126,6 +126,11 @@ export async function updateName(userId: string, name: string | null): Promise<U
   return toUser(rows[0]);
 }
 
+/** Store the user's IANA timezone (for local-time reminder delivery). */
+export async function updateTimezone(userId: string, timezone: string): Promise<void> {
+  await pool.query('UPDATE users SET timezone = $1, updated_at = NOW() WHERE id = $2', [timezone, userId]);
+}
+
 export async function deleteUser(userId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
     'DELETE FROM users WHERE id = $1',

@@ -17,9 +17,15 @@ interface DueSubscription {
   days_before: number;
 }
 
+// Hour-of-day (0–23) at which reminders are delivered in each user's local time.
+const SEND_HOUR = 8;
+
 export async function runReminderScan(): Promise<void> {
   console.log('[Reminder] Running scan at', new Date().toISOString());
+  const defaultTz = process.env.REMINDER_TIMEZONE ?? 'UTC';
 
+  // Only users for whom it is currently the local send-hour — so the hourly job
+  // delivers at ~08:00 in each user's own timezone (users.timezone), not one global time.
   const { rows } = await pool.query<DueSubscription>(`
     SELECT
       s.id           AS sub_id,
@@ -37,7 +43,8 @@ export async function runReminderScan(): Promise<void> {
     LEFT JOIN notification_preferences np ON np.user_id = s.user_id
     WHERE s.is_active = TRUE
       AND s.next_billing_date BETWEEN CURRENT_DATE AND CURRENT_DATE + (COALESCE(np.days_before, 3) * INTERVAL '1 day')
-  `);
+      AND EXTRACT(HOUR FROM (NOW() AT TIME ZONE COALESCE(NULLIF(u.timezone, ''), $1))) = $2
+  `, [defaultTz, SEND_HOUR]);
 
   let sent = 0;
   for (const row of rows) {
