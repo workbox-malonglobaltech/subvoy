@@ -38,7 +38,7 @@ export async function runReminderScan(): Promise<void> {
       u.name         AS user_name,
       COALESCE(np.email_enabled, TRUE)  AS email_enabled,
       COALESCE(np.days_before, 3)       AS days_before
-    FROM subscriptions s
+    FROM obligations s
     JOIN users u ON u.id = s.user_id
     LEFT JOIN notification_preferences np ON np.user_id = s.user_id
     WHERE s.is_active = TRUE
@@ -122,7 +122,7 @@ export async function runReminderScan(): Promise<void> {
       np.budget_limits
     FROM notification_preferences np
     JOIN users u ON u.id = np.user_id
-    JOIN subscriptions s ON s.user_id = np.user_id AND s.is_active = TRUE
+    JOIN obligations s ON s.user_id = np.user_id AND s.is_active = TRUE
     WHERE np.budget_alert_enabled = TRUE
       AND np.budget_limits <> '{}'::jsonb
     GROUP BY u.id, u.email, u.name, s.currency, np.budget_limits
@@ -201,7 +201,7 @@ export async function runReminderScan(): Promise<void> {
       s.amount      AS current_amount,
       s.last_known_amount,
       s.user_id
-    FROM subscriptions s
+    FROM obligations s
     WHERE s.is_active = TRUE
       AND s.last_known_amount IS NOT NULL
       AND ROUND(s.amount::numeric, 2) <> ROUND(s.last_known_amount::numeric, 2)

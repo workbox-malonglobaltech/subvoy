@@ -44,7 +44,7 @@ function makeClient(opts: { sub: SubFixture | null; wallet?: WalletFixture }) {
   const wallet = opts.wallet ?? { ngn_balance: '0', usd_balance: '0' };
 
   const query = jest.fn(async (sql: string) => {
-    if (/FROM subscriptions[\s\S]*FOR UPDATE/.test(sql)) {
+    if (/FROM obligations[\s\S]*FOR UPDATE/.test(sql)) {
       return {
         rows: sub
           ? [{
@@ -67,7 +67,7 @@ function makeClient(opts: { sub: SubFixture | null; wallet?: WalletFixture }) {
       // Reflect a deduction so balance_after is plausible (value not asserted here).
       return { rows: [{ ngn_balance: wallet.ngn_balance ?? '0', usd_balance: wallet.usd_balance ?? '0' }] };
     }
-    if (/UPDATE subscriptions/.test(sql)) {
+    if (/UPDATE obligations/.test(sql)) {
       return { rows: [{ next_billing_date: new Date('2026-07-01') }] };
     }
     // BEGIN / COMMIT / ROLLBACK / INSERT wallets / INSERT wallet_transactions
@@ -100,7 +100,7 @@ describe('chargeSubscription — manual', () => {
     expect(sqls).toContain('BEGIN');
     expect(sqls).toContain('COMMIT');
     // Subscription is locked by workspace_id (tenant scope).
-    expect(sqls.some(s => /FROM subscriptions[\s\S]*WHERE id = \$1 AND workspace_id = \$2[\s\S]*FOR UPDATE/.test(s))).toBe(true);
+    expect(sqls.some(s => /FROM obligations[\s\S]*WHERE id = \$1 AND workspace_id = \$2[\s\S]*FOR UPDATE/.test(s))).toBe(true);
     expect(sqls.some(s => /UPDATE wallets SET usd_balance/.test(s))).toBe(true);
     expect(sqls.some(s => /INSERT INTO wallet_transactions/.test(s))).toBe(true);
     expect(notifModel.create).toHaveBeenCalledTimes(1);

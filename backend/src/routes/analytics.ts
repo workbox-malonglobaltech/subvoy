@@ -29,7 +29,7 @@ router.get('/monthly', async (req: Request, res: Response) => {
          DATE_TRUNC('month', NOW()),
          INTERVAL '1 month'
        ) AS m(month)
-       LEFT JOIN subscriptions s
+       LEFT JOIN obligations s
          ON s.workspace_id = $1
          AND s.is_active = TRUE
          AND DATE_TRUNC('month', s.created_at) <= m.month

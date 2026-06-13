@@ -64,7 +64,7 @@ export async function runAutopayScan(): Promise<AutopayScanSummary> {
 
   const { rows } = await pool.query<DueRow>(
     `SELECT id, workspace_id, user_id, name
-     FROM subscriptions
+     FROM obligations
      WHERE autopay = TRUE
        AND is_active = TRUE
        AND next_billing_date <= CURRENT_DATE
