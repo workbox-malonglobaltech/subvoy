@@ -15,6 +15,7 @@ import { SubscriptionList } from '../components/SubscriptionList';
 import { StatCardSkeleton, SubscriptionCardSkeleton } from '../components/Skeleton';
 import { StatCard } from '../components/ui/StatCard';
 import { ProgressRing } from '../components/ui/ProgressRing';
+import { SelectMenu } from '../components/ui/SelectMenu';
 import { SubscriptionModal } from '../components/SubscriptionModal';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -28,6 +29,7 @@ import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
 import { DueSoonCard } from '../components/DueSoonCard';
 import { ExchangeRatesCard } from '../components/ExchangeRatesCard';
+import { RenewalsTimeline } from '../components/RenewalsTimeline';
 import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types';
 import { formatNative, toMonthlyNgn } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -174,8 +176,13 @@ export function DashboardPage() {
     else if (activeTab === 'paused') base = paused;
     else base = active;
 
+    const q = search.trim().toLowerCase();
     const result = base.filter(s => {
-      const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = !q
+        || s.name.toLowerCase().includes(q)
+        || (s.category ?? '').toLowerCase().includes(q)
+        || (s.service ?? '').toLowerCase().includes(q)
+        || (s.notes ?? '').toLowerCase().includes(q);
       const matchesCategory = categoryFilter === 'All' || s.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
@@ -448,7 +455,7 @@ export function DashboardPage() {
                 </svg>
                 <input
                   type="search"
-                  placeholder="Search subscriptions…"
+                  placeholder="Search by name, category, notes…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-line bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -524,17 +531,17 @@ export function DashboardPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <select
+                <SelectMenu
                   value={sortBy}
-                  onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                  aria-label="Sort subscriptions"
-                  className="rounded-lg border border-line bg-surface px-2 py-1.5 text-xs font-medium text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="default">Sort: Default</option>
-                  <option value="due">Next due</option>
-                  <option value="amount">Amount (high→low)</option>
-                  <option value="name">Name (A→Z)</option>
-                </select>
+                  onChange={v => setSortBy(v as typeof sortBy)}
+                  label="Sort:"
+                  options={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'due', label: 'Next due' },
+                    { value: 'amount', label: 'Amount (high→low)' },
+                    { value: 'name', label: 'Name (A→Z)' },
+                  ]}
+                />
                 <div className="flex rounded-lg border border-line p-0.5">
                   <button onClick={() => setViewMode('cards')} aria-pressed={viewMode === 'cards'} aria-label="Card view" title="Cards"
                     className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-surface-muted text-fg' : 'text-fg-subtle hover:text-fg'}`}>
@@ -558,7 +565,7 @@ export function DashboardPage() {
                     <button
                       onClick={handleBulkDelete}
                       disabled={selected.size === 0 || bulkDeleting}
-                      className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                      className="rounded-lg bg-error-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-error-700 disabled:opacity-50 transition-colors"
                     >
                       {bulkDeleting ? 'Pausing…' : `Pause ${selected.size > 0 ? `(${selected.size})` : ''}`}
                     </button>
@@ -589,19 +596,19 @@ export function DashboardPage() {
             ) : active.length === 0 && activeTab === 'all' ? (
               <EmptyState onAddClick={openAdd} />
             ) : overdue.length === 0 && activeTab === 'overdue' ? (
-              <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+              <div className="bg-surface rounded-2xl border border-dashed border-line p-10 text-center">
                 <p className="text-fg-subtle text-sm">No overdue subscriptions.</p>
               </div>
             ) : paused.length === 0 && activeTab === 'paused' ? (
-              <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+              <div className="bg-surface rounded-2xl border border-dashed border-line p-10 text-center">
                 <p className="text-fg-subtle text-sm">No paused subscriptions.</p>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+              <div className="bg-surface rounded-2xl border border-dashed border-line p-10 text-center">
                 <p className="text-fg-subtle text-sm">No subscriptions match your search.</p>
                 <button
                   onClick={() => { setSearch(''); setCategoryFilter('All'); }}
-                  className="mt-2 text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                  className="mt-2 text-sm text-primary font-medium hover:text-primary-700"
                 >
                   Clear filters
                 </button>
@@ -643,14 +650,14 @@ export function DashboardPage() {
 
             {/* Compliance — business workspaces track obligations alongside subscriptions */}
             {isBusiness && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+              <div className="bg-surface rounded-2xl border border-line p-5 shadow-card">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-gray-700">Compliance</h2>
-                  <Link to="/compliance" className="text-xs text-indigo-600 font-medium hover:text-indigo-800">View all →</Link>
+                  <h2 className="text-sm font-semibold text-fg-muted">Compliance</h2>
+                  <Link to="/compliance" className="text-xs text-primary font-medium hover:text-primary-700">View all →</Link>
                 </div>
                 {complianceItems.length === 0 ? (
                   <p className="text-sm text-fg-subtle">
-                    No obligations yet. <Link to="/compliance" className="text-indigo-600 font-medium hover:text-indigo-800">Add one</Link>
+                    No obligations yet. <Link to="/compliance" className="text-primary font-medium hover:text-primary-700">Add one</Link>
                   </p>
                 ) : (
                   <ul className="space-y-3">
@@ -662,7 +669,7 @@ export function DashboardPage() {
                         return (
                           <li key={item.id} className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-800 truncate max-w-[140px]">{item.title}</p>
+                              <p className="text-sm font-medium text-fg truncate max-w-[140px]">{item.title}</p>
                               <p className="text-xs text-fg-subtle truncate max-w-[140px]">{item.authority ?? 'Obligation'}</p>
                             </div>
                             <span className={`text-xs font-medium shrink-0 ${
@@ -683,6 +690,10 @@ export function DashboardPage() {
               </div>
             )}
 
+            <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
+
+            <RenewalsTimeline subscriptions={subscriptions} />
+
             <SpendByCategoryCard
               byCategory={summary?.byCategory ?? []}
               currency={primary?.currency ?? 'USD'}
@@ -697,8 +708,6 @@ export function DashboardPage() {
                 stale={fxStale}
               />
             )}
-
-            <DueSoonCard upcoming={upcoming} fxRates={fxRates} onPay={WALLET_ENABLED ? handlePay : undefined} />
 
             {/* Onboarding checklist — kept last so real data leads the rail */}
             {showChecklist && (

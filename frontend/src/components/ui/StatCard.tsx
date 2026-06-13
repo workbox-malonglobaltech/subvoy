@@ -44,7 +44,9 @@ export function StatCard({ label, value, trend, trendUpIsGood, icon, iconClassNa
       <div className="mt-1.5 text-2xl font-bold leading-tight text-fg tabular-nums">{value}</div>
       {hint && <p className="mt-1 text-caption text-fg-subtle">{hint}</p>}
       {sparkline && sparkline.length > 1 && (
-        <div className="mt-auto pt-3 text-primary"><Sparkline data={sparkline} /></div>
+        <div className={cn('mt-auto pt-3', trend == null ? 'text-primary' : good ? 'text-success-600' : 'text-error-500')}>
+          <Sparkline data={sparkline} />
+        </div>
       )}
     </div>
   );
