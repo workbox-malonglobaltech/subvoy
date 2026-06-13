@@ -45,6 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Capture the browser timezone once per session so reminders fire in local time.
+  useEffect(() => {
+    if (!user || sessionStorage.getItem('subvoy_tz_synced') === '1') return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return;
+    api.put('/auth/timezone', { timezone: tz })
+      .then(() => sessionStorage.setItem('subvoy_tz_synced', '1'))
+      .catch(() => { /* non-critical */ });
+  }, [user]);
+
   async function login(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);

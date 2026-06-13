@@ -27,6 +27,8 @@ interface DueComplianceRow {
 
 export async function runComplianceReminderScan(): Promise<number> {
   console.log('[Compliance] Reminder scan at', new Date().toISOString());
+  const defaultTz = process.env.REMINDER_TIMEZONE ?? 'UTC';
+  const SEND_HOUR = 8; // local hour of delivery, matches the subscription scan
 
   const { rows } = await pool.query<DueComplianceRow>(`
     SELECT
@@ -48,8 +50,9 @@ export async function runComplianceReminderScan(): Promise<number> {
         (c.due_date - CURRENT_DATE) = ANY(c.reminder_offsets)
         OR c.due_date < CURRENT_DATE
       )
+      AND EXTRACT(HOUR FROM (NOW() AT TIME ZONE COALESCE(NULLIF(u.timezone, ''), $1))) = $2
     ORDER BY c.due_date ASC
-  `);
+  `, [defaultTz, SEND_HOUR]);
 
   let sent = 0;
   for (const row of rows) {
