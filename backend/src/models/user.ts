@@ -136,6 +136,12 @@ export async function updateCountry(userId: string, country: string): Promise<vo
   await pool.query('UPDATE users SET country = $1, updated_at = NOW() WHERE id = $2', [country.toUpperCase(), userId]);
 }
 
+/** The user's stored ISO country (null if not set). */
+export async function getCountry(userId: string): Promise<string | null> {
+  const { rows } = await pool.query<{ country: string | null }>('SELECT country FROM users WHERE id = $1', [userId]);
+  return rows[0]?.country ?? null;
+}
+
 export async function deleteUser(userId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
     'DELETE FROM users WHERE id = $1',

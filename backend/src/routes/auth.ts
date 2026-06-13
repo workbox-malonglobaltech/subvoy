@@ -6,6 +6,7 @@ import * as userModel from '../models/user';
 import * as workspaceModel from '../models/workspace.model';
 import { hashPassword, comparePassword, signToken } from '../services/auth.service';
 import { sendWelcomeEmail } from '../services/email.service';
+import { getCountryCurrency } from '../services/country-settings.service';
 import { authCookieOptions, clearCookieOptions } from '../lib/cookie';
 import { pool } from '../db';
 // Note: findByEmail now returns User (no passwordHash). Use getPasswordHash for login comparison.
@@ -185,6 +186,20 @@ router.put('/timezone', authenticate, validate(timezoneSchema), async (req: Requ
   } catch (err) {
     console.error('Update timezone error:', err);
     res.status(500).json({ success: false, data: null, error: 'Failed to update timezone' });
+  }
+});
+
+// GET /auth/locale — the user's country + display currencies. Rule: the US shows
+// USD only; every other country shows its local currency AND USD.
+router.get('/locale', authenticate, async (req: Request, res: Response) => {
+  try {
+    const country = await userModel.getCountry(req.user!.id);
+    const currency = await getCountryCurrency(country);
+    const currencies = currency === 'USD' ? ['USD'] : [currency, 'USD'];
+    res.status(200).json({ success: true, data: { country, currency, currencies }, error: null });
+  } catch (err) {
+    console.error('Locale error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to fetch locale' });
   }
 });
 
