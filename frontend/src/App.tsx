@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { WALLET_ENABLED } from './lib/features';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SmartRoot } from './components/SmartRoot';
 import { LoginPage } from './pages/LoginPage';
@@ -55,6 +56,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/invite/:token" element={<AcceptInvitePage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
 
               {/* Protected app pages */}
               <Route element={<ProtectedRoute />}>
