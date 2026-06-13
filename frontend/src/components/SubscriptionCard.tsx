@@ -94,7 +94,7 @@ function SubscriptionCardImpl({ sub, onEdit, onDelete, onArchive, onRestore, onP
   );
 
   return (
-    <article className={`bg-surface rounded-2xl border shadow-card hover:shadow-pop overflow-hidden
+    <article className={`bg-surface rounded-2xl border shadow-card hover:shadow-pop hover:-translate-y-0.5 overflow-hidden
       transition-all duration-200 ease-out
       ${isRemoving ? 'opacity-0 scale-[0.97] pointer-events-none' : ''}
       ${justSaved  ? 'ring-2 ring-green-400 border-green-300' : selected ? 'border-indigo-400 ring-2 ring-indigo-200' : urgencyBorder}
