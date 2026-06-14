@@ -17,15 +17,19 @@ jest.mock('../../middleware/workspaceContext', () => ({
 jest.mock('../../services/auth.service', () => ({ verifyToken: jest.fn().mockReturnValue({ userId: 'u1', tokenVersion: 0 }) }));
 jest.mock('../../jobs/reminder.job', () => ({ startReminderJob: jest.fn() }));
 jest.mock('../../services/billing.service', () => ({ initiateCheckout: jest.fn(), handleWebhook: jest.fn() }));
+jest.mock('../../services/entitlements.service', () => ({ getWorkspaceUsage: jest.fn() }));
 jest.mock('../../models/workspace.model', () => ({ findById: jest.fn() }));
 jest.mock('../../models/user', () => ({ findById: jest.fn() }));
-jest.mock('../../models/workspace-billing.model', () => ({ get: jest.fn() }));
+jest.mock('../../models/workspace-billing.model', () => ({ get: jest.fn(), markCanceled: jest.fn() }));
+jest.mock('../../models/billing-history.model', () => ({ listByWorkspace: jest.fn() }));
 
 import app from '../../index';
 import * as billingService from '../../services/billing.service';
+import * as entitlements from '../../services/entitlements.service';
 import * as workspaceModel from '../../models/workspace.model';
 import * as userModel from '../../models/user';
 import * as billingModel from '../../models/workspace-billing.model';
+import * as billingHistoryModel from '../../models/billing-history.model';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -73,5 +77,49 @@ describe('GET /billing/status', () => {
     const res = await request(app).get('/billing/status');
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ plan: 'free', status: 'inactive' });
+  });
+});
+
+describe('GET /billing/usage', () => {
+  it('returns per-key usage', async () => {
+    (entitlements.getWorkspaceUsage as jest.Mock).mockResolvedValue([
+      { key: 'max_payment_obligations', used: 7, limit: 10 },
+      { key: 'max_compliance_obligations', used: 0, limit: 10 },
+      { key: 'max_members', used: 1, limit: 2 },
+    ]);
+    const res = await request(app).get('/billing/usage');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(3);
+    expect(res.body.data[0]).toMatchObject({ key: 'max_payment_obligations', used: 7, limit: 10 });
+  });
+});
+
+describe('GET /billing/history', () => {
+  it('returns the workspace payment history', async () => {
+    (billingHistoryModel.listByWorkspace as jest.Mock).mockResolvedValue([
+      { id: 'h1', plan: 'plus', provider: 'stripe', amountMinor: 250, currency: 'USD', periodEnd: null, createdAt: '2026-06-01T00:00:00.000Z' },
+    ]);
+    const res = await request(app).get('/billing/history');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0]).toMatchObject({ plan: 'plus', amountMinor: 250 });
+  });
+});
+
+describe('POST /billing/cancel', () => {
+  it('cancels an active plan', async () => {
+    (billingModel.get as jest.Mock).mockResolvedValue({ workspaceId: 'ws-1', plan: 'plus', provider: 'stripe', status: 'active', currentPeriodEnd: '2026-07-01T00:00:00.000Z' });
+    (billingModel.markCanceled as jest.Mock).mockResolvedValue(true);
+    const res = await request(app).post('/billing/cancel');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ status: 'canceled' });
+    expect(billingModel.markCanceled).toHaveBeenCalledWith('ws-1');
+  });
+
+  it('400s when there is no active plan to cancel', async () => {
+    (billingModel.get as jest.Mock).mockResolvedValue(null);
+    const res = await request(app).post('/billing/cancel');
+    expect(res.status).toBe(400);
+    expect(billingModel.markCanceled).not.toHaveBeenCalled();
   });
 });

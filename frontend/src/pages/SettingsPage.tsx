@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { TeamManagement } from '../components/TeamManagement';
 import { ChangePasswordSection } from '../components/ChangePasswordSection';
+import { PlanBillingSection } from '../components/PlanBillingSection';
 import { Button } from '../components/ui/Button';
 import { useSummary } from '../hooks/useSummary';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
@@ -239,18 +240,11 @@ export function SettingsPage() {
               </dd>
             </div>
 
-            {/* Plan */}
-            <div className="flex items-center justify-between text-sm">
-              <dt className="text-gray-500">Plan</dt>
-              <dd className="flex items-center gap-2">
-                <span className="font-medium text-gray-900 capitalize">{active?.plan ?? 'free'}</span>
-                <Link to="/plans" className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
-                  View plans
-                </Link>
-              </dd>
-            </div>
           </dl>
         </section>
+
+        {/* ── Plan & billing ────────────────────────────────────────────────── */}
+        <PlanBillingSection />
 
         {/* ── Team (Business workspaces only) ───────────────────────────────── */}
         {active?.type === 'business' && <TeamManagement />}
