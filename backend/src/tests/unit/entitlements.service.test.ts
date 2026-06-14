@@ -16,7 +16,9 @@ function setup(opts: { override?: number; plan?: string; planLimits?: Array<[str
     if (/workspace_limit_overrides/.test(sql)) {
       return Promise.resolve({ rows: opts.override !== undefined ? [{ limit_value: opts.override }] : [] });
     }
-    if (/SELECT plan FROM workspaces/.test(sql)) {
+    if (/FROM workspaces/.test(sql)) {
+      // The resolver computes an effective `plan` (with a read-time expiry guard);
+      // the unit mock returns it directly since no expired billing row is set.
       return Promise.resolve({ rows: [{ plan: opts.plan ?? 'free' }] });
     }
     if (/FROM plan_limits/.test(sql)) {

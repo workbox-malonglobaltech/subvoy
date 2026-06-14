@@ -223,6 +223,24 @@ export interface Plan {
   sortOrder: number;
 }
 
+/** Current usage vs. the effective limit for one limit key. limit === -1 = unlimited. */
+export interface BillingUsageItem {
+  key: string;
+  used: number;
+  limit: number;
+}
+
+/** A recorded successful plan payment (one row per activation). */
+export interface BillingHistoryEntry {
+  id: string;
+  plan: string;
+  provider: string | null;
+  amountMinor: number;
+  currency: string;
+  periodEnd: string | null;
+  createdAt: string;
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeSubscriptions: number;

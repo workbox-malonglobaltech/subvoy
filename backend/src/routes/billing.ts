@@ -5,8 +5,10 @@ import { authenticate } from '../middleware/authenticate';
 import { workspaceContext, requireRole } from '../middleware/workspaceContext';
 import * as billingService from '../services/billing.service';
 import * as billingModel from '../models/workspace-billing.model';
+import * as billingHistoryModel from '../models/billing-history.model';
 import * as workspaceModel from '../models/workspace.model';
 import * as userModel from '../models/user';
+import { getWorkspaceUsage } from '../services/entitlements.service';
 
 const router = Router();
 router.use(authenticate, workspaceContext);
@@ -69,6 +71,45 @@ router.get('/status', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Billing status error:', err);
     res.status(500).json({ success: false, data: null, error: 'Failed to fetch billing status' });
+  }
+});
+
+// GET /billing/usage — current usage vs. effective limit per key (drives meters + paywall).
+router.get('/usage', async (req: Request, res: Response) => {
+  try {
+    const usage = await getWorkspaceUsage(req.workspace!.id);
+    res.status(200).json({ success: true, data: usage, error: null });
+  } catch (err) {
+    console.error('Billing usage error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to fetch usage' });
+  }
+});
+
+// GET /billing/history — past successful plan payments for the workspace.
+router.get('/history', async (req: Request, res: Response) => {
+  try {
+    const entries = await billingHistoryModel.listByWorkspace(req.workspace!.id);
+    res.status(200).json({ success: true, data: entries, error: null });
+  } catch (err) {
+    console.error('Billing history error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to fetch billing history' });
+  }
+});
+
+// POST /billing/cancel — cancel an active plan (owner/admin). Access continues
+// until current_period_end; the plan-expiry job reverts it to free afterwards.
+router.post('/cancel', requireRole('owner', 'admin'), async (req: Request, res: Response) => {
+  try {
+    const billing = await billingModel.get(req.workspace!.id);
+    if (!billing || billing.status !== 'active') {
+      res.status(400).json({ success: false, data: null, error: 'No active plan to cancel.' });
+      return;
+    }
+    await billingModel.markCanceled(req.workspace!.id);
+    res.status(200).json({ success: true, data: { ...billing, status: 'canceled' }, error: null });
+  } catch (err) {
+    console.error('Billing cancel error:', err);
+    res.status(500).json({ success: false, data: null, error: 'Failed to cancel plan' });
   }
 });
 

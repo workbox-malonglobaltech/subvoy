@@ -58,8 +58,20 @@ export async function getEffectiveLimit(workspaceId: string, key: LimitKey): Pro
   if (ovr[0]) return ovr[0].limit_value;
 
   // 2. Per-plan default for the workspace's plan.
+  // Read-time expiry guard: if a paid period has lapsed (active/canceled with a
+  // past current_period_end), treat the workspace as free even before the daily
+  // plan-expiry job persists the downgrade — no window of over-entitlement.
   const { rows: ws } = await pool.query<{ plan: string }>(
-    `SELECT plan FROM workspaces WHERE id = $1`,
+    `SELECT CASE
+              WHEN b.current_period_end IS NOT NULL
+                   AND b.current_period_end < NOW()
+                   AND b.status IN ('active', 'canceled')
+                THEN 'free'
+              ELSE w.plan
+            END AS plan
+       FROM workspaces w
+       LEFT JOIN workspace_billing b ON b.workspace_id = w.id
+      WHERE w.id = $1`,
     [workspaceId]
   );
   const plan = ws[0]?.plan ?? 'free';
@@ -79,6 +91,44 @@ export async function isWithinLimit(workspaceId: string, key: LimitKey, currentC
   const limit = await getEffectiveLimit(workspaceId, key);
   if (limit === UNLIMITED) return true;
   return currentCount < limit;
+}
+
+// ── Usage (current count vs. effective limit, per key) ──────────────────────────
+
+export interface UsageItem { key: LimitKey; used: number; limit: number; }
+
+/**
+ * Current usage vs. the effective limit for every limit key, for the workspace's
+ * upgrade prompts / usage meters. `limit === -1` means unlimited.
+ */
+export async function getWorkspaceUsage(workspaceId: string): Promise<UsageItem[]> {
+  const [pay, comp, mem] = await Promise.all([
+    pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM obligations
+       WHERE workspace_id = $1 AND kind = 'payment' AND is_active = TRUE`,
+      [workspaceId]
+    ),
+    pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM compliance_items
+       WHERE workspace_id = $1 AND is_active = TRUE`,
+      [workspaceId]
+    ),
+    pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM workspace_members WHERE workspace_id = $1`,
+      [workspaceId]
+    ),
+  ]);
+
+  const used: Record<LimitKey, number> = {
+    max_payment_obligations: parseInt(pay.rows[0]?.count ?? '0', 10),
+    max_compliance_obligations: parseInt(comp.rows[0]?.count ?? '0', 10),
+    max_members: parseInt(mem.rows[0]?.count ?? '0', 10),
+  };
+
+  const keys: LimitKey[] = ['max_payment_obligations', 'max_compliance_obligations', 'max_members'];
+  return Promise.all(
+    keys.map(async key => ({ key, used: used[key], limit: await getEffectiveLimit(workspaceId, key) }))
+  );
 }
 
 // ── Admin management (super-admin only) ─────────────────────────────────────────
