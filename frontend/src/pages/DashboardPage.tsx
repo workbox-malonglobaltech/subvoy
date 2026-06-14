@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useCompliance } from '../hooks/useCompliance';
@@ -30,6 +30,9 @@ import { SpendByCategoryCard } from '../components/SpendByCategoryCard';
 import { DueSoonCard } from '../components/DueSoonCard';
 import { ExchangeRatesCard } from '../components/ExchangeRatesCard';
 import { RenewalsTimeline } from '../components/RenewalsTimeline';
+import { UpgradeModal } from '../components/UpgradeModal';
+import { PlanUsageMeter } from '../components/PlanUsageMeter';
+import { useUsage } from '../hooks/useBilling';
 import { Subscription, CreateSubscriptionInput } from '../../../src/shared/types';
 import { formatNative, toMonthlyNgn } from '../utils/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -45,7 +48,6 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { active: activeWorkspace } = useWorkspace();
   const toast = useToast();
-  const navigate = useNavigate();
   // Business workspaces track compliance too — show it alongside subscriptions.
   const isBusiness = activeWorkspace?.type === 'business';
   const { items: complianceItems } = useCompliance(isBusiness);
@@ -58,12 +60,16 @@ export function DashboardPage() {
   const { wallet, loading: walletLoading } = useWallet();
   const { data: analyticsData } = useAnalytics();
   const notifPrefs = useNotificationPrefs();
+  // Plan usage for the meter + paywall — refetches when the item count changes.
+  const { usage } = useUsage(subscriptions.length);
   const locale = useLocale();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Subscription | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [payConfirm, setPayConfirm] = useState<Subscription | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const upgradeAudience: 'personal' | 'business' = activeWorkspace?.type === 'business' ? 'business' : 'personal';
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -259,12 +265,11 @@ export function DashboardPage() {
         setSavedId(saved.id);
         setTimeout(() => setSavedId(null), 1400);
       } catch (err) {
-        // Plan cap reached → close the modal and take them to the upgrade page.
+        // Plan cap reached → close the form and offer an inline upgrade.
         if (err instanceof ApiError && err.status === 402) {
           setModalOpen(false);
           setEditing(null);
-          toast.info("You've reached your plan limit — here are your upgrade options.");
-          navigate('/plans');
+          setUpgradeOpen(true);
           return;
         }
         throw err; // other errors surface in the modal
@@ -472,6 +477,14 @@ export function DashboardPage() {
               </div>
               <Button onClick={openAdd} className="shrink-0 whitespace-nowrap">+ Add subscription</Button>
             </div>
+
+            {/* Plan usage meter — nudges upgrade as the free cap fills */}
+            <PlanUsageMeter
+              usage={usage}
+              limitKey="max_payment_obligations"
+              label="tracked items"
+              onUpgrade={() => setUpgradeOpen(true)}
+            />
 
             {/* Category filter pills */}
             {activeTab !== 'paused' && categories.length > 1 && (
@@ -755,6 +768,13 @@ export function DashboardPage() {
         initial={editing}
         defaultCurrency={locale?.currency ?? primary?.currency}
         currencies={locale?.currencies}
+      />
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        audience={upgradeAudience}
+        reason="You've reached your plan limit. Upgrade to track more."
       />
 
       {payConfirm && (
