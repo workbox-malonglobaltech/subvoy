@@ -69,6 +69,20 @@ export async function markActive(
   );
 }
 
+/**
+ * Marks an active plan as canceled. The workspace keeps access until
+ * current_period_end; the plan-expiry job reverts it to free when the period
+ * lapses. Only transitions from 'active' (no-op otherwise).
+ */
+export async function markCanceled(workspaceId: string): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE workspace_billing SET status = 'canceled', updated_at = NOW()
+     WHERE workspace_id = $1 AND status = 'active'`,
+    [workspaceId]
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 /** Finds the workspace tied to a checkout reference (webhook fallback path). */
 export async function findByReference(reference: string): Promise<{ workspaceId: string; plan: string } | null> {
   const { rows } = await pool.query<{ workspace_id: string; plan: string }>(

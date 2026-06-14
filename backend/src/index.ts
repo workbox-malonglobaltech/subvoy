@@ -36,6 +36,7 @@ import { startReminderJob } from './jobs/reminder.job';
 import { startFxJob } from './jobs/fx.job';
 import { startWalletJob } from './jobs/wallet.job';
 import { startAutopayJob } from './jobs/autopay.job';
+import { startPlanExpiryJob } from './jobs/plan-expiry.job';
 import { WALLET_ENABLED } from './config/features';
 import geoRouter from './routes/geo';
 
@@ -135,6 +136,9 @@ if (!isTest) {
   if (process.env.RUN_JOBS !== 'false') {
     startReminderJob();
     startFxJob();
+    // Plan-expiry runs regardless of the wallet flag — it's about Subvoy's own
+    // plan billing, which is independent of the user wallet feature.
+    startPlanExpiryJob();
     // Money-movement jobs only run when the wallet feature is enabled.
     if (WALLET_ENABLED) {
       startWalletJob();

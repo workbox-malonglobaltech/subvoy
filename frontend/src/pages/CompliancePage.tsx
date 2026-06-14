@@ -3,7 +3,8 @@ import { ComplianceModal } from '../components/ComplianceModal';
 import { useCompliance } from '../hooks/useCompliance';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useToast } from '../contexts/ToastContext';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
+import { UpgradeModal } from '../components/UpgradeModal';
 import { formatNative } from '../utils/currency';
 import { daysUntil } from '../lib/date';
 import { supabase } from '../lib/supabase';
@@ -44,6 +45,7 @@ export function CompliancePage() {
   const { items, loading, error, add, update, remove, setStatus, refetch } = useCompliance(isBusiness);
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [editing, setEditing] = useState<ComplianceItem | null>(null);
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
 
@@ -59,8 +61,19 @@ export function CompliancePage() {
       await update(editing.id, data);
       toast.success('Obligation updated');
     } else {
-      await add(data);
-      toast.success('Obligation added');
+      try {
+        await add(data);
+        toast.success('Obligation added');
+      } catch (err) {
+        // Plan cap reached → close the form and offer an inline upgrade.
+        if (err instanceof ApiError && err.status === 402) {
+          setModalOpen(false);
+          setEditing(null);
+          setUpgradeOpen(true);
+          return;
+        }
+        throw err; // other errors surface in the modal
+      }
     }
   }
 
@@ -209,6 +222,13 @@ export function CompliancePage() {
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
         initial={editing}
+      />
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        audience="business"
+        reason="You've reached your plan's compliance limit. Upgrade to track more obligations."
       />
     </div>
   );

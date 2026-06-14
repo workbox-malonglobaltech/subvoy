@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import * as planModel from '../models/plan.model';
 import * as workspaceModel from '../models/workspace.model';
 import * as billingModel from '../models/workspace-billing.model';
+import * as billingHistoryModel from '../models/billing-history.model';
 import { selectProvider, getProvider } from './billing';
 
 export type CheckoutResult =
@@ -74,6 +75,21 @@ export async function handleWebhook(
 
   await workspaceModel.setPlan(workspaceId, planKey);
   await billingModel.markActive(workspaceId, planKey, providerName, periodEnd);
+
+  // Append to the payment history log (non-critical — never fail activation on it).
+  try {
+    await billingHistoryModel.record({
+      workspaceId,
+      plan: planKey,
+      provider: providerName,
+      reference: event.reference ?? null,
+      amountMinor: plan?.priceMinor ?? 0,
+      currency: plan?.currency ?? 'USD',
+      periodEnd,
+    });
+  } catch (err) {
+    console.error('[billing] Failed to record billing history:', err);
+  }
 
   return { handled: true };
 }
