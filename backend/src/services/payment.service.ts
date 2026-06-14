@@ -72,7 +72,7 @@ export async function chargeSubscription(
     const { rows: subRows } = await client.query<LockedSubRow>(
       `SELECT id, user_id, name, amount, currency, is_active, autopay_max_amount,
               (next_billing_date <= CURRENT_DATE) AS is_due
-       FROM subscriptions
+       FROM obligations
        WHERE id = $1 AND workspace_id = $2
        FOR UPDATE`,
       [subId, workspaceId]
@@ -146,7 +146,7 @@ export async function chargeSubscription(
 
     // 6. Advance the billing date by one cycle.
     const { rows: advRows } = await client.query<{ next_billing_date: Date }>(
-      `UPDATE subscriptions
+      `UPDATE obligations
        SET next_billing_date =
          CASE billing_cycle
            WHEN 'weekly'  THEN next_billing_date + INTERVAL '7 days'

@@ -42,7 +42,7 @@ async function enrichUsers(users: User[]): Promise<AdminUserDetail[]> {
        COALESCE(w.ngn_balance, '0') AS ngn_balance,
        COALESCE(w.usd_balance, '0') AS usd_balance
      FROM users u
-     LEFT JOIN subscriptions s ON s.user_id = u.id
+     LEFT JOIN obligations s ON s.user_id = u.id
      LEFT JOIN wallets w ON w.user_id = u.id
      WHERE u.id = ANY($1)
      GROUP BY u.id, w.ngn_balance, w.usd_balance`,

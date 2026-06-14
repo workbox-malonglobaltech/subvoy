@@ -72,7 +72,7 @@ describe('Price change detection in runReminderScan', () => {
 
     // Verify updateLastKnownAmount was called with new amount
     const updateCall = (mockQuery.mock.calls as [string, unknown[]][]).find(
-      ([sql]) => sql.includes('UPDATE subscriptions SET last_known_amount')
+      ([sql]) => sql.includes('UPDATE obligations SET last_known_amount')
     );
     expect(updateCall).toBeDefined();
     expect(updateCall![1]).toContain(15.99);
