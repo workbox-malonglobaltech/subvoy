@@ -53,7 +53,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         COALESCE(SUM(CASE billing_cycle
           WHEN 'monthly' THEN amount * 12 WHEN 'weekly' THEN amount * 52 WHEN 'yearly' THEN amount END), 0)::text AS yearly,
         COUNT(*)::text AS count
-      FROM subscriptions
+      FROM obligations
       WHERE workspace_id = $1 AND is_active = TRUE
       GROUP BY currency
       ORDER BY 2 DESC`,
@@ -66,7 +66,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         COUNT(*)::text AS active_count,
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '7 days')::text  AS due_7_days,
         COUNT(*) FILTER (WHERE next_billing_date <= CURRENT_DATE + INTERVAL '30 days')::text AS due_30_days
-      FROM subscriptions
+      FROM obligations
       WHERE workspace_id = $1 AND is_active = TRUE`,
       [workspaceId]
     );
@@ -78,7 +78,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         COALESCE(category, 'Uncategorized') AS category,
         currency,
         ROUND(SUM(amount)::numeric, 2)::text AS total
-      FROM subscriptions
+      FROM obligations
       WHERE workspace_id = $1 AND is_active = TRUE
       GROUP BY COALESCE(category, 'Uncategorized'), currency
       ORDER BY SUM(amount) DESC`,
@@ -143,7 +143,7 @@ router.post('/', validate(createSchema), async (req: Request, res: Response) => 
 
     // Free-tier cap: limit active payment obligations per workspace (admin-tunable).
     const { rows: [{ count }] } = await pool.query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM subscriptions
+      `SELECT COUNT(*)::text AS count FROM obligations
        WHERE workspace_id = $1 AND kind = 'payment' AND is_active = TRUE`,
       [workspaceId]
     );

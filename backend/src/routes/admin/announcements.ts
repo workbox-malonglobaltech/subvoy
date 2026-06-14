@@ -134,7 +134,7 @@ router.post('/', authenticate, requireRole('superadmin'), async (req: Request, r
       const result = await pool.query<Recipient>(
         `SELECT DISTINCT u.id, u.email, u.name
          FROM users u
-         INNER JOIN subscriptions s ON s.user_id = u.id AND s.is_active = true
+         INNER JOIN obligations s ON s.user_id = u.id AND s.is_active = true
          WHERE u.suspended_at IS NULL`,
       );
       recipientRows = result.rows;

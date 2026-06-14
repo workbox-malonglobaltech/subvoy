@@ -354,7 +354,7 @@ describe('POST /imports/detected/:id/confirm', () => {
     );
     // Verify subscription INSERT used parameterized query (workspace + user)
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO subscriptions'),
+      expect.stringContaining('INSERT INTO obligations'),
       expect.arrayContaining([WS_ID, USER_ID, 'Netflix'])
     );
   });

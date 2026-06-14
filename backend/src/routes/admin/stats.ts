@@ -22,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
       unreadAdminNotificationsRes,
     ] = await Promise.all([
       pool.query<{ count: string }>('SELECT COUNT(*) AS count FROM users'),
-      pool.query<{ count: string }>('SELECT COUNT(*) AS count FROM subscriptions WHERE is_active = true'),
+      pool.query<{ count: string }>('SELECT COUNT(*) AS count FROM obligations WHERE is_active = true'),
       pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
       pool.query<{ count: string }>("SELECT COUNT(*) AS count FROM error_logs WHERE created_at >= NOW() - INTERVAL '24 hours'"),
       pool.query<{ count: string }>('SELECT COUNT(*) AS count FROM error_logs WHERE resolved_at IS NULL'),

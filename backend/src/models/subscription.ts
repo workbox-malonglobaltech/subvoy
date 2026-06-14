@@ -53,7 +53,7 @@ export async function findAllByWorkspace(
   opts: { limit?: number; offset?: number } = {}
 ): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    `SELECT * FROM subscriptions WHERE workspace_id = $1 AND is_active = TRUE
+    `SELECT * FROM obligations WHERE workspace_id = $1 AND is_active = TRUE
      ORDER BY next_billing_date ASC LIMIT $2 OFFSET $3`,
     [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
@@ -62,7 +62,7 @@ export async function findAllByWorkspace(
 
 export async function findById(id: string, workspaceId: string): Promise<Subscription | null> {
   const { rows } = await pool.query<SubscriptionRow>(
-    'SELECT * FROM subscriptions WHERE id = $1 AND workspace_id = $2',
+    'SELECT * FROM obligations WHERE id = $1 AND workspace_id = $2',
     [id, workspaceId]
   );
   if (!rows[0]) return null;
@@ -75,7 +75,7 @@ export async function create(
   data: CreateSubscriptionInput
 ): Promise<Subscription> {
   const { rows } = await pool.query<SubscriptionRow>(
-    `INSERT INTO subscriptions
+    `INSERT INTO obligations
        (workspace_id, user_id, name, amount, currency, billing_cycle, next_billing_date, category, service, website, logo_url, notes, autopay, autopay_max_amount)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
     [
@@ -131,7 +131,7 @@ export async function update(
   values.push(id, workspaceId);
 
   const { rows } = await pool.query<SubscriptionRow>(
-    `UPDATE subscriptions SET ${fields.join(', ')} WHERE id = $${idx++} AND workspace_id = $${idx++} RETURNING *`,
+    `UPDATE obligations SET ${fields.join(', ')} WHERE id = $${idx++} AND workspace_id = $${idx++} RETURNING *`,
     values
   );
   if (!rows[0]) return null;
@@ -143,7 +143,7 @@ export async function findAllByWorkspaceIncludingInactive(
   opts: { limit?: number; offset?: number } = {}
 ): Promise<Subscription[]> {
   const { rows } = await pool.query<SubscriptionRow>(
-    `SELECT * FROM subscriptions WHERE workspace_id = $1
+    `SELECT * FROM obligations WHERE workspace_id = $1
      ORDER BY is_active DESC, next_billing_date ASC LIMIT $2 OFFSET $3`,
     [workspaceId, clampLimit(opts.limit), safeOffset(opts.offset)]
   );
@@ -152,7 +152,7 @@ export async function findAllByWorkspaceIncludingInactive(
 
 export async function softDelete(id: string, workspaceId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
-    'UPDATE subscriptions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND workspace_id = $2',
+    'UPDATE obligations SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND workspace_id = $2',
     [id, workspaceId]
   );
   return (rowCount ?? 0) > 0;
@@ -160,7 +160,7 @@ export async function softDelete(id: string, workspaceId: string): Promise<boole
 
 export async function hardDelete(id: string, workspaceId: string): Promise<boolean> {
   const { rowCount } = await pool.query(
-    'DELETE FROM subscriptions WHERE id = $1 AND workspace_id = $2',
+    'DELETE FROM obligations WHERE id = $1 AND workspace_id = $2',
     [id, workspaceId]
   );
   return (rowCount ?? 0) > 0;
@@ -172,7 +172,7 @@ export async function hardDelete(id: string, workspaceId: string): Promise<boole
  */
 export async function updateLastKnownAmount(id: string, amount: number): Promise<void> {
   await pool.query(
-    'UPDATE subscriptions SET last_known_amount = $1, updated_at = NOW() WHERE id = $2',
+    'UPDATE obligations SET last_known_amount = $1, updated_at = NOW() WHERE id = $2',
     [amount, id]
   );
 }
@@ -183,7 +183,7 @@ export async function updateLastKnownAmount(id: string, amount: number): Promise
  */
 export async function advanceNextBillingDate(id: string, workspaceId: string): Promise<Subscription | null> {
   const { rows } = await pool.query<SubscriptionRow>(
-    `UPDATE subscriptions
+    `UPDATE obligations
      SET next_billing_date =
        CASE billing_cycle
          WHEN 'weekly'  THEN next_billing_date + INTERVAL '7 days'
@@ -204,7 +204,7 @@ export async function bulkDelete(ids: string[], workspaceId: string): Promise<nu
   if (ids.length === 0) return 0;
   const placeholders = ids.map((_, i) => `$${i + 2}`).join(', ');
   const { rowCount } = await pool.query(
-    `UPDATE subscriptions SET is_active = FALSE, updated_at = NOW()
+    `UPDATE obligations SET is_active = FALSE, updated_at = NOW()
      WHERE id IN (${placeholders}) AND workspace_id = $1`,
     [workspaceId, ...ids]
   );
